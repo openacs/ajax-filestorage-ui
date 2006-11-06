@@ -1,0 +1,94 @@
+div#page {
+	margin:0px;
+	padding:0px;
+}
+
+div#toolbar {
+	background-color:#e2e2e2;
+	width:100%;
+	margin:0px 0px 3px 0px;
+	padding:0;
+	line-height:2.3;
+	height:40px;
+	border:thin solid #000000;
+}
+
+div#folders a:hover { color: #000000; }
+
+/* Folder Container */
+div#foldercontainer {
+	float:left;
+	width:28%;
+	padding:0px;
+	margin:0px;
+	border:thin solid #e2e2e2;
+}
+div#folders {
+	height:500px;
+	overflow:auto;
+}
+/* File Container */
+div#filecontainer {
+	float:left;
+	width:70%;
+	padding:0px;
+	margin: 0 0 0 5px;
+}
+div#files {
+	min-height:500px;
+}
+div#helpstatus {
+	position:relative;
+	width:500px;
+	float:left;
+	margin-top:3px;
+	padding:1px;
+	opacity:0;
+	text-align:center;
+}
+div#trash {	
+	position:relative;
+	width:40px;
+	float:right;
+	text-align:right;
+	padding:2px;
+}
+div#upload {	
+	position:relative;
+	width:40px;
+	float:right;
+	text-align:right;
+	padding:2px;
+}
+div#oldfsui {	
+	position:relative;
+	width:40px;
+	text-align:right;
+	padding:2px;
+}
+
+.subheader {
+	padding:2px;
+	margin:0px;
+	background-color:#e2e2e2;
+	height:20px;
+	border:thin solid #e2e2e2;
+}
+
+.subheader td {
+	font-family:arial,verdana,helvetica;
+	font-size:12px;
+	font-weight:bold;
+}
+
+.filemsg {
+	color:#e2e2e2;
+	font-weight:bold;
+	font-family:arial,verdana,helvetica;
+	font-size:12px;	
+	text-align:center;
+}
+
+.yellowbg {
+	background-color:yellow;
+}
