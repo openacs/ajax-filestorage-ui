@@ -4,8 +4,6 @@
 
 	<link rel="stylesheet" type="text/css" href="/resources/acs-templating/lists.css" media="all">
 	<link rel="stylesheet" type="text/css" href="/resources/acs-templating/afs.css" media="all">
-	<link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/ajaxfs.css">
-
 	<script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs.js"></script>
 
 	@js_sources;noquote@
