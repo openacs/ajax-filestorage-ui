@@ -35,7 +35,7 @@ if { [exists_and_not_null parentfolderid] } {
 				-label $name \
 				-treevarname "tree" \
 				-href "javascript:showFolderContents('${object_id}',tree)" \
-				-attach_to_node "node" \
+				-attach_to_node "$parentfolderid" \
 				-dynamic_load $dyn_load_script ]
 
 	}
