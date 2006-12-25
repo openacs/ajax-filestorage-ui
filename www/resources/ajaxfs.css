@@ -1,94 +1,61 @@
-div#page {
-	margin:0px;
-	padding:0px;
+body {font:normal 9pt verdana; margin:0;padding:0;border:0px none;overflow:hidden;}
+#header{
+    border-bottom: 1px solid #083772;
+    padding:5px 4px;
+    color:#ffffff;
+    background: rgb(133, 174, 236) url(/resources/ajaxhelper/dojo-ajax/src/widget/templates/images/soriaAccordionSelected.gif);
 }
-
-div#toolbar {
-	background-color:#e2e2e2;
-	width:100%;
-	margin:0px 0px 3px 0px;
-	padding:0;
-	line-height:2.3;
-	height:40px;
-	border:thin solid #000000;
+#footer{
+    background: url(images/header-bar.gif) repeat-x bottom;
+    border-top: 1px solid #083772;
+    padding:2px 4px;
+    color:white;
+    font:normal 8pt arial,helvetica;
 }
-
-div#folders a:hover { color: #000000; }
-
-/* Folder Container */
-div#foldercontainer {
-	float:left;
-	width:28%;
-	padding:0px;
-	margin:0px;
-	border:thin solid #e2e2e2;
+#folders, #files, #fileinfo {
+    padding:10px;
 }
-div#folders {
-	height:500px;
-	overflow:auto;
+#folders {
+    padding-top :0;
+    padding-left: 5px;
 }
-/* File Container */
-div#filecontainer {
-	float:left;
-	width:70%;
-	padding:0px;
-	margin: 0 0 0 5px;
+#files {
+    padding-top :0;
 }
-div#files {
-	min-height:500px;
+#content p {
+    margin:5px;
 }
-div#helpstatus {
-	position:relative;
-	width:500px;
-	float:left;
-	margin-top:3px;
-	padding:1px;
-	opacity:0;
-	text-align:center;
+#folders li {
+    padding:2px;
+    padding-left:10px;
+    background-image:url(images/bullet.gif);
+    background-position: -3px 6px;
+    background-repeat: no-repeat;
+    font-size:8pt;
+    display: block;
 }
-div#trash {	
-	position:relative;
-	width:40px;
-	float:right;
-	text-align:right;
-	padding:2px;
+.ylayout-panel-north, .ylayout-panel-south, #content .ylayout-panel-center{
+    border:0px none;
 }
-div#upload {	
-	position:relative;
-	width:40px;
-	float:right;
-	text-align:right;
-	padding:2px;
+#content .ylayout-panel-south{
+    border-top:1px solid #aca899;
 }
-div#oldfsui {	
-	position:relative;
-	width:40px;
-	text-align:right;
-	padding:2px;
+#content .ylayout-panel-center{
+    border-bottom:1px solid #aca899;
 }
-
-.subheader {
-	padding:2px;
-	margin:0px;
-	background-color:#e2e2e2;
-	height:20px;
-	border:thin solid #e2e2e2;
+#fileheader {
+    padding: 3px;
 }
-
-.subheader td {
-	font-family:arial,verdana,helvetica;
-	font-size:12px;
-	font-weight:bold;
+#fileheader td a {
+    font-size: 10px;
+    text-align: center;
 }
-
-.filemsg {
-	color:#e2e2e2;
-	font-weight:bold;
-	font-family:arial,verdana,helvetica;
-	font-size:12px;	
-	text-align:center;
+.statusmsg {
+    color: #cccccc;
+    text-align: center;
+    font-weight: bold;
 }
-
-.yellowbg {
-	background-color:yellow;
+.folderselected {
+    background-color:blue;
+    color:white;
 }

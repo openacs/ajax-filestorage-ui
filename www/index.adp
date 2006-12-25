@@ -1,29 +1,49 @@
-<master>
-<property name="title">@page_title@</property>
-<property name="header_stuff">
+@doc_type;noquote@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>@page_title@</title>
+<script type="text/javascript" src="/resources/ajaxhelper/yui/utilities/utilities.js"></script>
+<script type="text/javascript" src="/resources/ajaxhelper/yui/treeview/treeview.js"></script>
+<script type="text/javascript" src="/resources/ajaxhelper/yui-ext/yui-ext.js"></script>
+<link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/tree.css" />
+<link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/yui-ext/resources/css/reset-min.css">
+<link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/yui-ext/resources/css/tabs.css">
+<link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/yui-ext/resources/css/layout.css">
+<link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/ajaxfs.css">
+<script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs.js"></script>
 
-	<link rel="stylesheet" type="text/css" href="/resources/acs-templating/lists.css" media="all">
-	<link rel="stylesheet" type="text/css" href="/resources/acs-templating/afs.css" media="all">
-	<script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs.js"></script>
+</head>
+<body class="ytheme-gray">
 
-	@js_sources;noquote@
-
-</property>
-
-<if @admin_button_url@ not nil><a href="@admin_button_url;noquote@" style="padding:5px; color:#ffffff; background-color:#3a26b1; border:1px solid #cccccc; width:100px;">Classic View</a></if>
-
-<div id="page">
-	<div id="foldercontainer">
-		<div class="subheader"><table border=0 cellpadding=0 cellspacing=0 width="100%"><tr><td>Folders</td><td align="right"><a href="javascript:tree.collapseAll();" style="font-size:10px;">Collapse All&nbsp;</a></td></tr></table></div>
-		<div id="folders"><br /><br /><br /><div class="filemsg">No folders found.</div></div>
-	</div>
-	<div id="filecontainer">
-		<div class="subheader"><table border=0 cellpadding=0 cellspacing=0 width="100%"><tr><td width="55%" align="center">File/Folder</td><td width="20%" align="center">Size</td><td width="25%" align="center">Last Modified</td></tr></table></div>
-		<div id="files"><br /><br /><br /><div class="filemsg">Click on an item in the file tree to view its contents here.</div></div>
-	</div>
+<div id ="container">
+  <div id="header" class="ylayout-inactive-content">
+    <h2>@page_title@</h2>
+  </div>
+  <div id="folders" class="ylayout-inactive-content"><br /><br /><br /><div class="filemsg">No folders found.</div></div>
+  <div id="content" class="ylayout-inactive-content"></div>
+    <div id="properties" class="ylayout-inactive-content">
+        <br /><div class="statusmsg">Click a file to get more information</div>
+    </div>
+    <div id="revisions" class="ylayout-inactive-content">
+        <br /><div class="statusmsg">This item does not have any revisions</div>
+    </div>
+    <div id="filepane" class="ylayout-inactive-content">
+            <div id="fileheader" class="ylayout-panel-hd">
+                <table border=0 cellpadding=2 cellspacing=0 width="100%">
+                <tr>
+                    <td align="center" width="40%"><a href="javascript:void(0)" onclick="showFolderContents(document.getElementById('lastfolder').value,tree,'name')">Filename</a></td>
+                    <td align="center" width="20%"><a href="javascript:void(0)" onclick="showFolderContents(document.getElementById('lastfolder').value,tree,'content_size')">Size</a></td>
+                    <td align="center" width="20%"><a href="javascript:void(0)" onclick="showFolderContents(document.getElementById('lastfolder').value,tree,'type')">Type</a></td>
+                    <td align="center" width="20%"><a href="javascript:void(0)" onclick="showFolderContents(document.getElementById('lastfolder').value,tree,'last_modified_ansi')">Last Modified</a></td>
+                </tr>
+                </table>
+            </div>
+            <div id="files"><br /><div class="statusmsg">Click on an item in the file tree to view its contents here.</div></div>
+    </div>
 </div>
 
 <form><input type="hidden" id="lastfolder" name="lastfolder" value="" /></form>
-<iframe id='talk' name='target_upload' src='' style='width:1px;height:1px;border:0;clear:both;'></iframe>
-
 @js_script;noquote@
+</body>
+</html>

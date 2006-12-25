@@ -2,21 +2,19 @@ ad_page_contract {
 
 	Populates the file container div with the contents of the passed folder id.
 	This page is meant to be called via xmlhttp
-	
+
 	@author Hamilton Chua (ham@solutiongrove.com)
 	@creation-date Feb 24, 2006
 } {
 	{folder_id:integer}
 	{element ""}
- 	{orderby "actions,asc"}
+ 	{orderby "type"}
 }
 
  #ns_log Notice "HAM : fetching $folder_id : $element"
 
 # TODO :refine permissions
-# for now we just make sure it's an admin
 set viewing_user_id [ad_conn user_id]
-set admin_p [permission::permission_p -party_id $viewing_user_id -object_id $folder_id -privilege "admin"]
 
 # get the root folder
 set root_package_id [afs::get_root_folder -folder_id $folder_id]
@@ -96,43 +94,43 @@ db_multirow -extend { shortened_name shortened_title icon last_modified_pretty c
 	folder {
 	    # set file_url "${fs_url}index?[export_vars {{folder_id $object_id}}]"
 	    set file_url "javascript:openfolder('${object_id}')"
-            set download_url $file_url
-	    set icon "/resources/ajax-filestorage-ui/icons/folder.jpg"
+        set download_url $file_url
+	    set icon "/resources/ajax-filestorage-ui/icons/folder.gif"
 	}
 	url {
 	    set icon "/resources/acs-subsite/url-button.gif"
 	    set file_url ${url}
-            set download_url $file_url
+        set download_url $file_url
 	}
 	"application/pdf" {
 	    set file_url "${fs_url}view/${file_url}"
-            set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"                
+            set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"
 	    set icon "/resources/ajax-filestorage-ui/icons/pdf.gif"
 	}
 	"application/vnd.ms-excel" {
 	    set file_url "${fs_url}view/${file_url}"
-            set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"                
+            set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"
 	    set icon "/resources/ajax-filestorage-ui/icons/excel.gif"
 	}
 	"application/zip" {
 	    set file_url "${fs_url}view/${file_url}"
-            set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"                
+            set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"
 	    set icon "/resources/ajax-filestorage-ui/icons/zip.gif"
 	}
 	"application/msword" {
 	    set file_url "${fs_url}view/${file_url}"
-            set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"                
+        set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"
 	    set icon "/resources/ajax-filestorage-ui/icons/word.gif"
 	}
-        "video/x-flv" {
-            set file_url "${fs_url}view/${file_url}"
-            set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"
-            set icon "/resources/ajax-filestorage-ui/icons/flv.jpg"
-        }
+    "video/x-flv" {
+        set file_url "${fs_url}view/${file_url}"
+        set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"
+        set icon "/resources/ajax-filestorage-ui/icons/flv.jpg"
+    }
 	default {
 	    set icon "/resources/ajax-filestorage-ui/icons/icon_html.gif"
 	    set file_url "${fs_url}view/${file_url}"
-            set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"                
+        set download_url "${fs_url}download/?[export_vars {{file_id $object_id}}]"
 	}
 
     }

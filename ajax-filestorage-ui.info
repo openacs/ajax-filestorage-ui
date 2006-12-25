@@ -8,12 +8,12 @@
     <singleton-p>f</singleton-p>
     <auto-mount>ajaxfs</auto-mount>
 
-    <version name="0.1d" url="http://openacs.org/repository/download/apm/ajax-filestorage-ui-0.1d.apm">
+    <version name="0.5d" url="http://openacs.org/repository/download/apm/ajax-filestorage-ui-0.5d.apm">
         <owner url="mailto:ham@solutiongrove.com">Hamilton Chua</owner>
         <release-date>2006-06-01</release-date>
         <vendor url="http://www.solutiongrove.com">Solutiongrove</vendor>
 
-        <provides url="ajax-filestorage-ui" version="0.1d"/>
+        <provides url="ajax-filestorage-ui" version="0.5d"/>
         <requires url="ajaxhelper" version="0.1d"/>
         <requires url="file-storage" version="5.1.5d3"/>
 
