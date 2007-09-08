@@ -1,1 +1,1 @@
-@newname;noquote@
+@result;noquote@

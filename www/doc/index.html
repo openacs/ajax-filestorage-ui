@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Ajax File Storage User Interface</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <style>
+  body { font-family:arial; }
+  .style1 {color: #FF0000}
+  </style>
+</head>
+<body>
+<h1>Ajax File Storage User Interface </h1>
+<p>Hamilton G. Chua (ham@solutiongrove.com)<br>
+  September 2007 <br>
+  v0.8d</p>
+<p><strong>What's New :</strong> </p>
+<p>v0.8d</p>
+<ul>
+  <li>can be used on all file storage instances by following setup instructions below </li>
+  <li> degrades gracefully to old file storage interface if javascript is off</li>
+  <li>context menu via right click on the right panel </li>
+  <li>drag and drop moving of files and folders on the right panel to the tree panel </li>
+  <li>flash based upload component care of swfupload</li>
+  <li> toolbar menu</li>
+  <li>support for internationalization thru acs-lang</li>
+  <li>support for SHIFT and CTRL to select multiple files on the right panel</li>
+</ul>
+<p><strong>Set Up</strong></p>
+<p>Install ajax-filestorage-ui thru acs-admin/install. </p>
+<p>Before you can use ajaxfs-ui with your file storage instance, you need to make a few modifications to file-storage/www/index.adp. The code for index.adp is shown below and the changes that you must add are in <span class="style1">red</span> . </p>
+<pre style="border: 1px dashed rgb(153, 153, 153); padding: 5px; overflow: auto; font-family: Andale Mono,Lucida Console,Monaco,fixed,monospace; color: rgb(0, 0, 0); background-color: rgb(238, 238, 238); font-size: 12px; line-height: 14px; width: 100%;"><code>
+&lt;master&gt;<br>&lt;property name=&quot;title&quot;&gt;@folder_name@&lt;/property&gt;<br>&lt;property name=&quot;header&quot;&gt;@folder_name@&lt;/property&gt;<br>&lt;property name=&quot;context&quot;&gt;@context;noquote@&lt;/property&gt;<br>&lt;property name=&quot;displayed_object_id&quot;&gt;@folder_id;noquote@&lt;/property&gt;<br>
+<span class="style1">&lt;include src=&quot;/packages/ajax-filestorage-ui/lib/ajaxfs-include&quot; package_id=&quot;@package_id@&quot; folder_id=&quot;@folder_id@&quot; layoutdiv=&quot;fscontainer&quot;&gt;</span>
+
+<span class="style1">&lt;div id=&quot;fscontainer&quot;&gt;</span>
+&lt;table&gt;<br>&lt;tr&gt;<br>&lt;td&gt;<br>&lt;if @up_url@ not nil&gt;<br>    &lt;a href=&quot;@up_url@&quot; class=&quot;button&quot;&gt;#file-storage.index_page_navigate_up_folder#&lt;/a&gt;<br>&lt;/if&gt;<br>&lt;/td&gt;<br>&lt;td&gt;<br>&lt;if @project_url@ not nil&gt;<br>	&lt;a href=&quot;@project_url@&quot;&gt;#file-storage.back_to_project#: @project_name@&lt;/a&gt;<br>&lt;/if&gt;<br>&lt;/td&gt;<br>&lt;/tr&gt;<br>&lt;/table&gt;<br>&lt;include src=&quot;folder-chunk&quot; folder_id=&quot;@folder_id@&quot;<br>    n_past_days=&quot;@n_past_days@&quot; allow_bulk_actions=&quot;1&quot; return_url=&quot;@return_url@&quot;&gt;<br><span class="style1">&lt;/div&gt;</span>
+
+<span class="style1">&lt;div style=&quot;clear:both&quot;&gt;&lt;/div&gt;</span>
+&lt;p&gt;@notification_chunk;noquote@&lt;/p&gt;
+</code></pre>
+</body>
+</html>

@@ -1,49 +1,85 @@
-@doc_type;noquote@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>@page_title@</title>
-<script type="text/javascript" src="/resources/ajaxhelper/yui/utilities/utilities.js"></script>
-<script type="text/javascript" src="/resources/ajaxhelper/yui/treeview/treeview.js"></script>
-<script type="text/javascript" src="/resources/ajaxhelper/yui-ext/yui-ext.js"></script>
-<link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/tree.css" />
-<link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/yui-ext/resources/css/reset-min.css">
-<link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/yui-ext/resources/css/tabs.css">
-<link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/yui-ext/resources/css/layout.css">
+
+<link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext/resources/css/ext-all.css">
 <link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/ajaxfs.css">
-<script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs.js"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/2.3.0/build/utilities/utilities.js"></script> 
+<script type="text/javascript" src="/resources/ajaxhelper/ext/adapter/yui/ext-yui-adapter.js"></script>
+<script type="text/javascript" src="/resources/ajaxhelper/ext/ext-all.js"></script>
+<script type="text/javascript" src="/resources/ajax-filestorage-ui/swfupload/swfupload.js"></script>
+<script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs-min.js"></script>
+
+<script type="text/javascript">
+<if @options@ defined>
+// acs-lang
+var acs_lang_text = {
+        newfolder:"#file-storage.Create_a_new_folder#",
+        uploadfile:"#file-storage.Add_File#",
+        createurl:"#file-storage.Create_a_URL#",
+        deletefs:"#file-storage.Delete#",
+        filename:"#file-storage.File#",
+        size:"#file-storage.Size#",
+        lastmodified:"#file-storage.Last_Modified#",
+        rename:"#file-storage.Rename#",
+        permissions:"#file-storage.Permissions#",
+        linkaddress:"#file-storage.CopyLink#",
+        upload: "#file-storage.Upload#",
+        cancel: "#ajax-filestorage-ui.Cancel#",
+        close: "#ajax-filestorage-ui.Close#",
+        browse: "#ajax-filestorage-ui.Browse#",
+        properties: "#ajax-filestorage-ui.Properties#",
+        for_upload_to: "#ajax-filestorage-ui.for_upload_to#",
+        zip_extracted: "#ajax-filestorage-ui.Zip_file#",
+        uploading : "#ajax-filestorage-ui.Uploading#",
+        complete : "#ajax-filestorage-ui.Complete#",
+        alert : "#ajax-filestorage-ui.Alert#",
+        uploadcancel : "#ajax-filestorage-ui.Cancelled#",
+        sessionexpired : "#ajax-filestorage-ui.SessionExpired#",
+        copyhighlighted : "#ajax-filestorage-ui.CopyHighlight#",
+        limitto100 : "#ajax-filestorage-ui.Limit100#",
+        error : "#ajax-filestorage-ui.Error#",
+        an_error_occured : "#ajax-filestorage-ui.ErrorOccured#",
+        reverted : "#ajax-filestorage-ui.ChangesReverted#",
+        error_and_reverted: "#ajax-filestorage-ui.ErrorRevert#",
+        enter_new_name: "#file-storage.lt_Please_enter_the_new_#",
+        upload_failed: "#ajax-filestorage-ui.UploadFailed#",
+        loading: "#ajax-filestorage-ui.OneMomentUploading#",
+        file_required: "#ajax-filestorage-ui.TitleAndFileRequired#",
+        createurl_failed: "#ajax-filestorage-ui.CreateUrlFailed#",
+        invalid_url: "#ajax-filestorage-ui.InvalidUrl#",
+        ok: "#ajax-filestorage-ui.Ok#",
+        error_move : "#ajax-filestorage-ui.ErrorMove#",
+        duplicate_name : "#ajax-filestorage-ui.DuplicateName#",
+        duplicate_name_error : "#ajax-filestorage-ui.EnterDifferentName#",
+        permission_denied : "#ajax-filestorage-ui.PermissionDenied#",
+        permission_denied_error : "#ajax-filestorage-ui.NoPermissionToRename#",
+        folder_name_required : "#ajax-filestorage-ui.FolderNameRequired#",
+        tree_render_error : "#ajax-filestorage-ui.ErrorRenderTreePanel#",
+        file_list : "#ajax-filestorage-ui.File List#",
+        new_folder_error : "#ajax-filestorage-ui.CreateFolderError#",
+        new_folder_label : "#file-storage.New_Folder#",
+        delete_error : "#ajax-filestorage-ui.DeleteItemError#",
+        confirm: "#ajax-filestorage-ui.Confirm#",
+        confirm_delete : "#ajax-filestorage-ui.ConfirmDelete#",
+        cant_del_root: "#ajax-filestorage-ui.CanNotDeleteRoot#",
+        foldercontains: "#ajax-filestorage-ui.FolderContains#",
+        upload_intro: "#ajax-filestorage-ui.UploadFileIntro#",
+        file_to_upload: "#ajax-filestorage-ui.FileToUpload#",
+        file_title: "#ajax-filestorage-ui.Title#",
+        file_description: "#ajax-filestorage-ui.Description#",
+        multiple_files: "#ajax-filestorage-ui.MultipleFiles#",
+        multiple_files_msg: "#ajax-filestorage-ui.ThisIsAZip#"
+}
+var fsInstance = new ajaxfs({@options;noquote@});
+</if>
+</script>
+
 
 </head>
-<body class="ytheme-gray">
-
-<div id ="container">
-  <div id="header" class="ylayout-inactive-content">
-    <h2>@page_title@</h2>
-  </div>
-  <div id="folders" class="ylayout-inactive-content"><br /><br /><br /><div class="filemsg">No folders found.</div></div>
-  <div id="content" class="ylayout-inactive-content"></div>
-    <div id="properties" class="ylayout-inactive-content">
-        <br /><div class="statusmsg">Click a file to get more information</div>
-    </div>
-    <div id="revisions" class="ylayout-inactive-content">
-        <br /><div class="statusmsg">This item does not have any revisions</div>
-    </div>
-    <div id="filepane" class="ylayout-inactive-content">
-            <div id="fileheader" class="ylayout-panel-hd">
-                <table border=0 cellpadding=2 cellspacing=0 width="100%">
-                <tr>
-                    <td align="center" width="40%"><a href="javascript:void(0)" onclick="showFolderContents(document.getElementById('lastfolder').value,tree,'name')">Filename</a></td>
-                    <td align="center" width="20%"><a href="javascript:void(0)" onclick="showFolderContents(document.getElementById('lastfolder').value,tree,'content_size')">Size</a></td>
-                    <td align="center" width="20%"><a href="javascript:void(0)" onclick="showFolderContents(document.getElementById('lastfolder').value,tree,'type')">Type</a></td>
-                    <td align="center" width="20%"><a href="javascript:void(0)" onclick="showFolderContents(document.getElementById('lastfolder').value,tree,'last_modified_ansi')">Last Modified</a></td>
-                </tr>
-                </table>
-            </div>
-            <div id="files"><br /><div class="statusmsg">Click on an item in the file tree to view its contents here.</div></div>
-    </div>
-</div>
-
-<form><input type="hidden" id="lastfolder" name="lastfolder" value="" /></form>
-@js_script;noquote@
+<body>
+<div id="fscontainer" style="width:100%;height:400px"></div>
 </body>
 </html>

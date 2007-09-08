@@ -1,61 +1,84 @@
-body {font:normal 9pt verdana; margin:0;padding:0;border:0px none;overflow:hidden;}
-#header{
-    border-bottom: 1px solid #083772;
-    padding:5px 4px;
-    color:#ffffff;
-    background: rgb(133, 174, 236) url(/resources/ajaxhelper/dojo-ajax/src/widget/templates/images/soriaAccordionSelected.gif);
-}
-#footer{
-    background: url(images/header-bar.gif) repeat-x bottom;
-    border-top: 1px solid #083772;
-    padding:2px 4px;
-    color:white;
-    font:normal 8pt arial,helvetica;
-}
-#folders, #files, #fileinfo {
-    padding:10px;
-}
-#folders {
-    padding-top :0;
-    padding-left: 5px;
-}
-#files {
-    padding-top :0;
-}
-#content p {
-    margin:5px;
-}
-#folders li {
-    padding:2px;
-    padding-left:10px;
-    background-image:url(images/bullet.gif);
-    background-position: -3px 6px;
-    background-repeat: no-repeat;
-    font-size:8pt;
-    display: block;
-}
-.ylayout-panel-north, .ylayout-panel-south, #content .ylayout-panel-center{
-    border:0px none;
-}
-#content .ylayout-panel-south{
-    border-top:1px solid #aca899;
-}
-#content .ylayout-panel-center{
-    border-bottom:1px solid #aca899;
-}
-#fileheader {
-    padding: 3px;
-}
-#fileheader td a {
-    font-size: 10px;
-    text-align: center;
-}
-.statusmsg {
-    color: #cccccc;
-    text-align: center;
-    font-weight: bold;
-}
-.folderselected {
-    background-color:blue;
-    color:white;
-}
+    .x-tree-node img.folder,  .x-tree-node-collapsed img.folder{
+        background: url(/resources/ajaxhelper/ext/resources/images/default/tree/folder.gif)
+    }
+    .x-tree-node-expanded img.folder {
+        background: url(/resources/ajaxhelper/ext/resources/images/default/tree/folder-open.gif)
+    }
+    .x-tree-grayselected a span{
+        background:#e2e2e2;
+    }
+    .onerow {
+        padding:5px;
+        vertical-align: middle;
+        cursor:pointer;
+    }
+    .onerow td a {
+        text-decoration: none;
+        color:#000000;
+    }
+    #filepanel {
+        font-family: arial,tahoma,helvetica,sans-serif;
+        font-size: 11px;
+    }
+    #filepanel .x-view-selected {
+        background-color: #C3DAF9;
+    }
+    div.flash
+    {
+        width: 80%;
+        margin: 10px 0px 10px 0px;
+        border-color: #D9E4FF;
+    }
+    .progressName {
+        font-size: 8pt;
+        font-weight: bold;
+        color: #555555;
+        
+        width: 80%;
+        height: 14px;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    .progressBarInProgress,
+    .progressBarComplete,
+    .progressBarError {
+        font-size: 0px;
+        width: 0%;
+        height: 2px;
+        background-color: blue;
+        margin-top: 2px;
+    }
+    .progressBarComplete {
+        width: 100%;
+        background-color: green;
+        visibility: hidden;
+    }
+    .progressBarError {
+        width: 100%;
+        background-color: red;
+        visibility: hidden;
+    }
+    .progressBarStatus {
+        margin-top: 2px;
+        width: 80%;
+        font-size: 7pt;
+        font-family: Verdana;
+        text-align: left;
+        white-space: nowrap;
+    }
+    a.progressCancel,
+    a.progressCancel:link,
+    a.progressCancel:active,
+    a.progressCancel:visited,
+    a.progressCancel:hover
+    {
+        font-size: 0px;
+        display: block;
+        height: 20px;
+        width: 20px;
+        
+        background-image: url(/resources/ajax-filestorage-ui/icons/delete.png);
+        background-repeat: no-repeat;
+        float: right;
+    }

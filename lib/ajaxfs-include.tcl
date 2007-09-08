@@ -1,17 +1,17 @@
-ad_page_contract {
-
-    Sample page that loads ajax file storage
-    @author Hamilton Chua (ham@solutiongrove.com)
-
-} {
-    {package_id:integer,optional}
-    {root_folder_id:integer,optional}
-    {folder_id:integer,optional }
-}
+# ajax-filestorage-ui/lib/ajaxfs-include.tcl
+# This include should be placed on a page
+#  where you wish to have an ajaxfs instance
+#  this include expects the following variables
+# package_id : package_id of the file storage instance
+# folder_id : the folder that will be opened on load, defaults to the root folder
+# layoutdiv : the id of the div element where you want ajaxfs to be rendered
+# theme : can be any of the following
+# - default
+# - aero
+# - gray
+# - vista
 
 set user_id [ad_conn user_id]
-set page_title "Ajax File Storage UI"
-set options ""
 
 if { [exists_and_not_null root_folder_id] } {
     if {  ![db_0or1row "get_folder_name" "select name as instance_name from fs_folders where folder_id = :root_folder_id"] } {
@@ -32,7 +32,7 @@ if { [exists_and_not_null package_id] } {
         append options ",pathToFolder: new Array([ajaxfs::generate_path -folder_id $folder_id])"
     }
     if { [exists_and_not_null public] } {
-        append options ",public:$public"
+        append options ",ispublic:$public"
     }
     if { [exists_and_not_null layoutdiv] } {
         append options ",layoutdiv:\"$layoutdiv\""
