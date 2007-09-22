@@ -32,20 +32,27 @@ if { ![permission::permission_p -no_cache \
 
 
 set result 0
-set folder_name "New Folder"
 set description ""
+set pretty_folder_name "New Folder"
+set folder_name [string tolower [util_text_to_url -text $pretty_folder_name]]
+set file_exists [db_string "count_existing" "select count(*) from cr_items where name like '$folder_name%' and parent_id=:folder_id"]
+if { $file_exists != 0 } {
+    append folder_name "_$file_exists"
+    append pretty_folder_name " ($file_exists)"
+}   
+
 
 db_transaction {
 
     set new_folder_id [fs::new_folder \
-        -name [ns_rand] \
-        -pretty_name $folder_name \
+        -name $folder_name \
+        -pretty_name $pretty_folder_name \
         -parent_id $folder_id \
         -creation_user $user_id \
         -creation_ip [ad_conn peeraddr] \
         -description $description]
 
-    set result $new_folder_id
+    set result "\[{\"id\":\"$new_folder_id\",\"pretty_folder_name\":\"$pretty_folder_name\"}\]"
 
 } on_error {
 

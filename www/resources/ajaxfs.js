@@ -908,10 +908,11 @@ function ajaxfs(configObj) {
         var callback = function(option,success,response) {
             var error_msg_txt = acs_lang_text.new_folder_error || "Sorry, there was an error trying to create your new folder.";
             if(success) {
-                if (!isNaN(parseInt(response.responseText))) {
-                    if(parseInt(response.responseText) != 0) {
+                if (response.responseText) {
+                    var result_obj = eval(response.responseText);
+                    if(parseInt(result_obj[0].id) != 0) {
                         // create a new blank node on the currently selected one
-                        var newnode = currentTreeNode.appendChild(new Ext.tree.TreeNode({text:acs_lang_text.new_folder_label || 'New Folder',id:response.responseText,iconCls:'folder',singleClickExpand:true,attributes:{write_p:'t'}}));
+                        var newnode = currentTreeNode.appendChild(new Ext.tree.TreeNode({text:result_obj[0].pretty_folder_name,id:result_obj[0].id,iconCls:'folder',singleClickExpand:true,attributes:{write_p:'t'}}));
                         tree.getSelectionModel().select(newnode);
                         newnode.loaded=true;
                         newnode.fireEvent("click",newnode);
