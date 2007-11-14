@@ -9,9 +9,14 @@ ad_page_contract {
     {folder_id:integer,optional }
 }
 
+if { [exists_and_not_null theme] } {
+    set theme "gray"
+}
+
 set user_id [ad_conn user_id]
 set page_title "Ajax File Storage UI"
 set options ""
+set create_url_p [parameter::get -package_id $package_id -parameter "EnableCreateUrl" -default 1]
 
 if { [exists_and_not_null root_folder_id] } {
     if {  ![db_0or1row "get_folder_name" "select name as instance_name from fs_folders where folder_id = :root_folder_id"] } {
@@ -32,7 +37,7 @@ if { [exists_and_not_null package_id] } {
         append options ",pathToFolder: new Array([ajaxfs::generate_path -folder_id $folder_id])"
     }
     if { [exists_and_not_null public] } {
-        append options ",public:$public"
+        append options ",ispublic:$public"
     }
     if { [exists_and_not_null layoutdiv] } {
         append options ",layoutdiv:\"$layoutdiv\""

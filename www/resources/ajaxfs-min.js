@@ -230,7 +230,7 @@ try{
 var _2b=_28.currentfolder;
 var _2c=_28.treepanel.getNodeById(_2b).text;
 var _2d=new FileProgress(_27,this.getSetting("progress_target"));
-_2d.SetStatus(_29+"<b>"+_2c+"</b><br><input type='checkbox' id='zip"+_27.id+"' onclick=\"if(document.getElementById('zip"+_27.id+"').checked) { fsInstance.swfu.addFileParam('"+_27.id+"','unpack_p','1') } else { fsInstance.swfu.removeFileParam('"+_27.id+"','unpack_p') }\"> "+_2a);
+_2d.SetStatus(_29+"<b>"+_2c+"</b><br>Title: <input type='text' onblur=\"fsInstance.swfu.removeFileParam('"+_27.id+"','filetitle');fsInstance.swfu.addFileParam('"+_27.id+"','filetitle',this.value)\">(optional)<br><input type='checkbox' id='zip"+_27.id+"' onclick=\"if(document.getElementById('zip"+_27.id+"').checked) { fsInstance.swfu.addFileParam('"+_27.id+"','unpack_p','1') } else { fsInstance.swfu.removeFileParam('"+_27.id+"','unpack_p') }\"> "+_2a);
 _2d.ToggleCancel(true,this);
 this.addFileParam(_27.id,"folder_id",_2b);
 _28.upldDialog.buttons[0].enable();
@@ -345,11 +345,13 @@ this.xmlhttpurl="/ajaxfs2/xmlhttp/";
 this.config=null;
 this.layout=null;
 this.treepanel=null;
+this.tagcloudpanel=null;
 this.te=null;
 this.rootfolder=null;
 this.filegrid=null;
 this.toolbar=null;
 this.currentfolder=null;
+this.currenttag=null;
 this.asyncCon=new Ext.data.Connection();
 this.msgbox=Ext.MessageBox;
 this.upldDialog=null;
@@ -426,16 +428,23 @@ Ext.Msg.alert(acs_lang_text.error||"Error",_5b+": <br><br><font color='red'>"+_5
 }else{
 if(_51!="folder"&&_53===" "){
 _53=_4f.get("title");
+_4f.set("filename",_53);
 }
 if(_51=="folder"){
 this.treepanel.getNodeById(_52).setText(_56);
 }
+nodetags=_4f.get("tags");
+if(nodetags!=""){
+var _5d="<div id='tagscontainer_"+_52+"' style='color:blue'><div style='float:left'>Tags:</div><span id='tagslist_"+_52+"' style='float:left'>"+nodetags+"</span></div>";
+}else{
+var _5d="<div id='tagscontainer_"+_52+"' style='color:blue'></div>";
+}
 _4f.set("title",_56);
-_4f.set("title_and_name","<span id='title"+_52+"'>"+_56+"</span><br><font style='font-size:10px;color:#666666'><span id='subtitle"+_52+"'>"+_53+"</span></font>");
+_4f.set("title_and_name","<span id='title"+_52+"'>"+_56+"</span><br><font style='font-size:10px;color:#666666'><span id='subtitle"+_52+"'>"+_53+"</span></font>"+_5d);
 _4f.commit();
 }
 }else{
-Ext.Msg.alert(acs_lang_text.error||"Error",err_msg_text+":<br><br><font color='red'>"+_5a.responseText+"</font><br><br>"+_5c);
+Ext.Msg.alert(acs_lang_text.error||"Error",_5b+":<br><br><font color='red'>"+_5a.responseText+"</font><br><br>"+_5c);
 }
 };
 this.asyncCon.request({url:this.xmlhttpurl+"editname",params:"newname="+_56+"&object_id="+_52+"&type="+_51+"&url="+_50,method:"POST",callback:_57,scope:this});
@@ -447,50 +456,104 @@ return false;
 }
 };
 Ext.Msg.show({title:acs_lang_text.rename||"Rename",prompt:true,msg:acs_lang_text.enter_new_name||"Please enter a new name for ... ",value:_4f.get("title"),buttons:Ext.Msg.OKCANCEL,fn:_54.createDelegate(this)});
-var _5d=YAHOO.util.Dom.getElementsByClassName("ext-mb-input","input","x-msg-box");
-_5d[0].select();
+var _5e=YAHOO.util.Dom.getElementsByClassName("ext-mb-input","input","x-msg-box");
+_5e[0].select();
 };
 this.permsRedirect=function(){
-var _5e=this.filegrid.getSelectionModel().getSelected();
-var _5f=_5e.get("id");
-var _60=window.open(window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"permissions?object_id="+_5f+"&return_url="+window.location.pathname+"?package_id="+this.config.package_id+"&folder_id="+this.currentfolder);
-_60.focus();
+var _5f=this.filegrid.getSelectionModel().getSelected();
+var _60=_5f.get("id");
+var _61=window.open(window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"permissions?object_id="+_60+"&return_url="+window.location.pathname+"?package_id="+this.config.package_id+"&folder_id="+this.currentfolder);
+_61.focus();
 };
 this.propertiesRedirect=function(){
-var _61=this.filegrid.getSelectionModel().getSelected();
-var _62=_61.get("id");
-var _63=window.open(window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"file?file_id="+_62);
-_63.focus();
+var _62=this.filegrid.getSelectionModel().getSelected();
+var _63=_62.get("id");
+var _64=window.open(window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"file?file_id="+_63);
+_64.focus();
 };
-this.showContext=function(_64,i,e){
+this.viewsRedirect=function(){
+var _65=this.filegrid.getSelectionModel().getSelected();
+var _66=_65.get("id");
+window.open(window.location.protocol+"//"+window.location.hostname+"/o/"+_66+"/info");
+window.focus();
+};
+this.promptTag=function(){
+var _67=this;
+var _68=_67.filegrid.getSelectionModel().getSelected();
+var _69=_68.get("id");
+Ext.Msg.prompt("Tag","Enter or edit one or more tags. Seperate tags with commas (,):",function(btn,_6b){
+if(btn=="ok"){
+var _6c=function(_6d,_6e,_6f){
+if(_6e){
+_68.set("tags",_6b);
+Ext.get("tagscontainer_"+_69).update("Tag:<span id='tagslist_"+_6b+"'>"+_6b+"</span>");
+this.tagcloudpanel.load("/ajaxfs2/xmlhttp/tagcloud?package_id="+this.config.package_id);
+}
+};
+_67.asyncCon.request({url:_67.xmlhttpurl+"addtag",params:"object_id="+_69+"&tags="+_6b+"&package_id="+_67.config.package_id,method:"POST",callback:_6c,scope:_67});
+}
+});
+if(document.getElementById("tagslist_"+_69)){
+var _70=YAHOO.util.Dom.getElementsByClassName("ext-mb-input","input","x-msg-box");
+_70[0].value=document.getElementById("tagslist_"+_69).innerHTML;
+_70[0].select();
+}
+};
+this.downloadArchive=function(){
+var _71=this.filegrid.getSelectionModel().getSelected();
+var _72=_71.get("id");
+top.location.href="download-archive/?object_id="+_72;
+};
+this.showContext=function(_73,i,e){
 e.stopEvent();
+var dm=_73.getDataSource();
+var _77=dm.getAt(i);
+var _78=_77.get("type");
+var _79=_77.get("id");
+if(_78=="folder"){
+var _7a="Open";
+}else{
+var _7a="Download";
+}
 if(this.contextmenu==null){
-this.contextmenu=new Ext.menu.Menu({id:"rightclickmenu",items:[new Ext.menu.Item({text:acs_lang_text.deletefs||"Delete",icon:"/resources/ajax-filestorage-ui/icons/delete.png",handler:this.confirmDel.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.rename||"Rename",icon:"/resources/ajax-filestorage-ui/icons/page_edit.png",handler:this.fileRename.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.linkaddress||"Copy Link Address",icon:"/resources/ajax-filestorage-ui/icons/page_copy.png",handler:this.linkCopy.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.permissions||"Permissions",icon:"/resources/ajax-filestorage-ui/icons/group_key.png",handler:this.permsRedirect.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.properties||"Properties",icon:"/resources/ajax-filestorage-ui/icons/page_edit.png",handler:this.propertiesRedirect.createDelegate(this)})]});
-}
-if(_64.getSelectionModel().getCount()>1){
-this.contextmenu.items.items[1].disable();
-this.contextmenu.items.items[2].disable();
-this.contextmenu.items.items[3].disable();
-this.contextmenu.items.items[4].disable();
+this.contextmenu=new Ext.menu.Menu({id:"rightclickmenu",items:[new Ext.menu.Item({text:_7a,icon:"/resources/ajax-filestorage-ui/icons/page_white.png",handler:this.itemDblClick.createDelegate(this,[_73,i,e],false)}),new Ext.menu.Item({text:"Tag",icon:"/resources/ajax-filestorage-ui/icons/tag_blue.png",handler:this.promptTag.createDelegate(this)}),new Ext.menu.Item({text:"Views",icon:"/resources/ajax-filestorage-ui/icons/camera.png",handler:this.viewsRedirect.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.deletefs||"Delete",icon:"/resources/ajax-filestorage-ui/icons/delete.png",handler:this.confirmDel.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.rename||"Rename",icon:"/resources/ajax-filestorage-ui/icons/page_edit.png",handler:this.fileRename.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.linkaddress||"Copy Link Address",icon:"/resources/ajax-filestorage-ui/icons/page_copy.png",handler:this.linkCopy.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.permissions||"Permissions",icon:"/resources/ajax-filestorage-ui/icons/group_key.png",handler:this.permsRedirect.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.properties||"Properties",icon:"/resources/ajax-filestorage-ui/icons/page_edit.png",handler:this.propertiesRedirect.createDelegate(this)}),new Ext.menu.Item({text:acs_lang_text.download_archive||"Download archive",icon:"/resources/ajax-filestorage-ui/icons/arrow_down.png",handler:this.downloadArchive.createDelegate(this)})]});
 }else{
-this.contextmenu.items.items[1].enable();
-this.contextmenu.items.items[2].enable();
-this.contextmenu.items.items[3].enable();
-var _67=this.filegrid.getSelectionModel().getSelected();
-var _68=_67.get("type");
-if(_68=="folder"||_68=="url"){
-this.contextmenu.items.items[4].disable();
+this.contextmenu.items.items[0].setText(_7a);
+}
+if(_73.getSelectionModel().getCount()>1){
+this.contextmenu.items.items[0].hide();
+this.contextmenu.items.items[1].hide();
+this.contextmenu.items.items[2].hide();
+this.contextmenu.items.items[3].show();
+this.contextmenu.items.items[4].hide();
+this.contextmenu.items.items[5].hide();
+this.contextmenu.items.items[6].hide();
+this.contextmenu.items.items[7].hide();
+this.contextmenu.items.items[8].hide();
 }else{
-this.contextmenu.items.items[4].enable();
+this.contextmenu.items.items[0].show();
+this.contextmenu.items.items[2].show();
+this.contextmenu.items.items[3].show();
+this.contextmenu.items.items[4].show();
+this.contextmenu.items.items[5].show();
+this.contextmenu.items.items[6].show();
+if(_78=="folder"){
+this.contextmenu.items.items[1].hide();
+this.contextmenu.items.items[7].hide();
+this.contextmenu.items.items[8].show();
+}else{
+this.contextmenu.items.items[1].show();
+this.contextmenu.items.items[7].show();
+this.contextmenu.items.items[8].hide();
 }
 }
-var _69=e.getXY();
+var _7b=e.getXY();
 this.contextmenu.rowid=i;
-this.contextmenu.showAt([_69[0],_69[1]]);
+this.contextmenu.showAt([_7b[0],_7b[1]]);
 };
 this.uploadFile=function(e){
 if(document.getElementById("upload_file").value!=""&&document.getElementById("filetitle").value!=""){
-var _6b={success:function(){
+var _7d={success:function(){
 },upload:function(){
 this.treepanel.getSelectionModel().getSelectedNode().loaded=false;
 this.treepanel.getSelectionModel().getSelectedNode().fireEvent("click",this.treepanel.getSelectionModel().getSelectedNode());
@@ -499,10 +562,10 @@ this.upldDialog.hide();
 },failure:function(){
 Ext.Msg.alert(acs_lang_text.error||"Error",acs_lang_text.upload_failed||"Upload failed, please try again later.");
 },scope:this};
-var _6c=acs_lang_text.loading||"One moment. This may take a while depending on how large your upload is.";
-this.upldDialog.getEl().mask("<img src='/resources/ajaxhelper/images/indicator.gif'>&nbsp;"+_6c);
+var _7e=acs_lang_text.loading||"One moment. This may take a while depending on how large your upload is.";
+this.upldDialog.getEl().mask("<img src='/resources/ajaxhelper/images/indicator.gif'>&nbsp;"+_7e);
 YAHOO.util.Connect.setForm("newfileform",true,true);
-var _6d=YAHOO.util.Connect.asyncRequest("POST",this.xmlhttpurl+"file-add",_6b);
+var _7f=YAHOO.util.Connect.asyncRequest("POST",this.xmlhttpurl+"file-add",_7d);
 }else{
 Ext.Msg.alert(acs_lang_text.alert||"Alert",acs_lang_text.file_required||"<b>Title</b> and <b>File to upload</b> are required.");
 }
@@ -510,7 +573,7 @@ Ext.Msg.alert(acs_lang_text.alert||"Alert",acs_lang_text.file_required||"<b>Titl
 this.createUrl=function(e){
 if(document.getElementById("fsurl").value!=""&&document.getElementById("fstitle").value!=""){
 if(isURL(document.getElementById("fsurl").value)){
-var _6f={success:function(){
+var _81={success:function(){
 this.treepanel.getSelectionModel().getSelectedNode().loaded=false;
 this.treepanel.getSelectionModel().getSelectedNode().fireEvent("click",this.treepanel.getSelectionModel().getSelectedNode());
 this.createurlDialog.getEl().unmask();
@@ -521,7 +584,7 @@ Ext.Msg.alert(acs_lang_text.error||"Error",acs_lang_text.createurl_failed||"Crea
 },scope:this};
 this.createurlDialog.getEl().mask("<img src='/resources/ajaxhelper/images/indicator.gif'>&nbsp;One moment.");
 YAHOO.util.Connect.setForm("simple-add");
-var _70=YAHOO.util.Connect.asyncRequest("POST",this.xmlhttpurl+"url-add",_6f);
+var _82=YAHOO.util.Connect.asyncRequest("POST",this.xmlhttpurl+"url-add",_81);
 }else{
 Ext.Msg.alert(acs_lang_text.alert||"Alert",acs_lang_text.invalid_url||"<b>URL</b> is not a valid url.");
 }
@@ -545,25 +608,25 @@ this.createurlDialog.show();
 this.showUplddialog=function(){
 this.upldDialog.setTitle(acs_lang_text.uploadfile||"Upload Files");
 if(checkFlashVersion()<8){
-var _71=acs_lang_text.file_to_upload||"File to upload";
-var _72=acs_lang_text.file_title||"Title";
-var _73=acs_lang_text.file_description||"Description";
-var _74=acs_lang_text.multiple_files||"Multiple Files";
-var _75=acs_lang_text.multiple_files_msg||"This is a ZIPfile containing multiple files.";
-this.upldDialog.body.update("<form id=\"newfileform\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"package_id\" value=\""+this.config.package_id+"\"><input type=\"hidden\" name=\"folder_id\" value=\""+this.currentfolder+"\"><p>"+_71+"<br /><input type=\"file\" name=\"upload_file\" id=\"upload_file\"></p><br><p>"+_72+"<br /><input type=\"text\" name=\"filetitle\" id=\"filetitle\"></p><br><p>"+_73+" :<br /><textarea name=\"filedescription\" id=\"filedescription\"></textarea></p><p>"+_74+" :<br /><br /><input type=\"checkbox\" name=\"unpack_p\" value=\"t\" id=\"unpack_p\" /> "+_75+"</p></form>");
+var _83=acs_lang_text.file_to_upload||"File to upload";
+var _84=acs_lang_text.file_title||"Title";
+var _85=acs_lang_text.file_description||"Description";
+var _86=acs_lang_text.multiple_files||"Multiple Files";
+var _87=acs_lang_text.multiple_files_msg||"This is a ZIPfile containing multiple files.";
+this.upldDialog.body.update("<form id=\"newfileform\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"package_id\" value=\""+this.config.package_id+"\"><input type=\"hidden\" name=\"folder_id\" value=\""+this.currentfolder+"\"><p>"+_83+"<br /><input type=\"file\" name=\"upload_file\" id=\"upload_file\"></p><br><p>"+_84+"<br /><input type=\"text\" name=\"filetitle\" id=\"filetitle\"></p><br><p>"+_85+" :<br /><textarea name=\"filedescription\" id=\"filedescription\"></textarea></p><p>"+_86+" :<br /><br /><input type=\"checkbox\" name=\"unpack_p\" value=\"t\" id=\"unpack_p\" /> "+_87+"</p></form>");
 if(!this.upldDialog.buttons){
 this.upldDialog.addButton({text:acs_lang_text.upload||"Upload",icon:"/resources/ajax-filestorage-ui/icons/page_add.png",cls:"x-btn-text-icon"},this.uploadFile,this);
 this.upldDialog.addButton({text:acs_lang_text.cancel||"Cancel",icon:"/resources/ajax-filestorage-ui/icons/cancel.png",cls:"x-btn-text-icon"},this.upldDialog.hide,this.upldDialog);
 }
 }else{
 if(this.swfu==null){
-var _76=acs_lang_text.upload_intro||"Click <b>Browse</b> to select a file to upload to the selected folder.";
-this.upldDialog.body.update("<div id=\"upldMsg\">"+_76+"<hr></div><div class=\"flash\" id=\"fsuploadprogress\"></div>");
-var _77=String(this.config.package_id);
-var _78=String(this.config.user_id);
-var _79=String(this.currentfolder);
-var _7a=String(this.config.max_file_size)||5000000;
-this.swfu=new SWFUpload({debug:false,upload_target_url:"/ajaxfs2/xmlhttp/file-add-flash",upload_params:{user_id:_78,package_id:_77},file_types:"*.*",file_size_limit:_7a,file_queue_limit:3,begin_upload_on_queue:false,file_progress_handler:uploadProgress,file_cancelled_handler:uploadCancel,file_complete_handler:uploadComplete,queue_complete_handler:uploadQueueComplete,error_handler:uploadError,flash_url:"/resources/ajax-filestorage-ui/swfupload/swfupload.swf"});
+var _88=acs_lang_text.upload_intro||"Click <b>Browse</b> to select a file to upload to the selected folder.";
+this.upldDialog.body.update("<div id=\"upldMsg\">"+_88+"<hr></div><div class=\"flash\" id=\"fsuploadprogress\"></div>");
+var _89=String(this.config.package_id);
+var _8a=String(this.config.user_id);
+var _8b=String(this.currentfolder);
+var _8c=String(this.config.max_file_size)||5000000;
+this.swfu=new SWFUpload({debug:false,upload_target_url:"/ajaxfs2/xmlhttp/file-add-flash",upload_params:{user_id:_8a,package_id:_89},file_types:"*.*",file_size_limit:_8c,file_queue_limit:3,begin_upload_on_queue:false,file_progress_handler:uploadProgress,file_cancelled_handler:uploadCancel,file_complete_handler:uploadComplete,queue_complete_handler:uploadQueueComplete,error_handler:uploadError,flash_url:"/resources/ajax-filestorage-ui/swfupload/swfupload.swf"});
 this.swfu.fileQueued=uploadStart.createDelegate(this.swfu,[this],true);
 this.swfu.fileProgress=uploadProgress.createDelegate(this.swfu,[this],true);
 this.swfu.fileComplete=uploadComplete.createDelegate(this.swfu,[this],true);
@@ -582,178 +645,195 @@ this.upldDialog.body.setStyle("padding","3px");
 this.upldDialog.show();
 };
 this.confirmDel=function(){
-var _7b=acs_lang_text.confirm_delete||"Are you sure you want to delete";
-var _7c=acs_lang_text.foldercontains||"This folder contains";
-var _7d=this.filegrid.getSelectionModel().getSelections();
-if(_7d.length>0){
-if(_7d.length==1){
-var _7e=_7d[0].get("title");
-if(_7d[0].get("type")==="folder"){
-var msg=_7c+" <b>"+_7d[0].get("size")+"</b>.<br>";
+var _8d=acs_lang_text.confirm_delete||"Are you sure you want to delete";
+var _8e=acs_lang_text.foldercontains||"This folder contains";
+var _8f=this.filegrid.getSelectionModel().getSelections();
+if(_8f.length>0){
+if(_8f.length==1){
+var _90=_8f[0].get("title");
+if(_8f[0].get("type")==="folder"){
+var msg=_8e+" <b>"+_8f[0].get("size")+"</b>.<br>";
 }else{
 var msg="";
 }
-var msg=msg+_7b+" <b>"+_7e+"</b> ?";
+var msg=msg+_8d+" <b>"+_90+"</b> ?";
 }else{
-var msg=_7b+": <br><br>";
-for(var x=0;x<_7d.length;x++){
-msg=msg+"<b>"+_7d[x].get("title")+"</b> ";
-if(_7d[x].get("type")==="folder"){
-msg=msg+"("+_7d[x].get("size")+")";
+var msg=_8d+": <br><br>";
+for(var x=0;x<_8f.length;x++){
+msg=msg+"<b>"+_8f[x].get("title")+"</b> ";
+if(_8f[x].get("type")==="folder"){
+msg=msg+"("+_8f[x].get("size")+")";
 }
 msg=msg+"<br>";
 }
 }
 this.msgbox.confirm(acs_lang_text.confirm||"Confirm",msg,this.delFsitems,this);
 }else{
-var _81=this.treepanel.getSelectionModel().getSelectedNode();
-var _82=this.treepanel.getRootNode();
-if(_81.attributes["id"]==_82.attributes["id"]){
+var _93=this.treepanel.getSelectionModel().getSelectedNode();
+var _94=this.treepanel.getRootNode();
+if(_93.attributes["id"]==_94.attributes["id"]){
 Ext.Msg.alert(acs_lang_text.alert||"Alert",acs_lang_text.cant_del_root||"The root folder can not be deleted.");
 }else{
-this.msgbox.confirm(acs_lang_text.confirm||"Confirm",_7b+" <b>"+_81.attributes["text"]+"</b>?",this.delFolder,this);
+this.msgbox.confirm(acs_lang_text.confirm||"Confirm",_8d+" <b>"+_93.attributes["text"]+"</b>?",this.delFolder,this);
 }
 }
 };
-this.delFsitems=function(_83){
-var _84=this.filegrid.getSelectionModel().getSelections();
-var _85=[];
-for(var x=0;x<_84.length;x++){
-_85[x]=_84[x].get("id");
+this.delFsitems=function(_95){
+var _96=this.filegrid.getSelectionModel().getSelections();
+var _97=[];
+for(var x=0;x<_96.length;x++){
+_97[x]=_96[x].get("id");
 }
-var _87=function(_88,_89,_8a){
-var _8b=acs_lang_text.delete_error||"Sorry, there was an error trying to delete this item.";
-if(_89&&_8a.responseText==1){
-for(var x=0;x<_84.length;x++){
-this.filegrid.getDataSource().remove(_84[x]);
-var _8d=_84[x].get("id");
-var _8e=this.treepanel.getNodeById(_8d);
-if(_8e){
-_8e.parentNode.fireEvent("click",_8e.parentNode);
-_8e.parentNode.removeChild(_8e);
+var _99=function(_9a,_9b,_9c){
+var _9d=acs_lang_text.delete_error||"Sorry, there was an error trying to delete this item.";
+if(_9b&&_9c.responseText==1){
+for(var x=0;x<_96.length;x++){
+this.filegrid.getDataSource().remove(_96[x]);
+var _9f=_96[x].get("id");
+var _a0=this.treepanel.getNodeById(_9f);
+if(_a0){
+_a0.parentNode.fireEvent("click",_a0.parentNode);
+_a0.parentNode.removeChild(_a0);
 }
 }
 this.filegrid.getSelectionModel().clearSelections();
 }else{
-Ext.Msg.alert(acs_lang_text.error||"Error",_8b+"<br><br><font color='red'>"+_8a.responseText+"</font>");
+Ext.Msg.alert(acs_lang_text.error||"Error",_9d+"<br><br><font color='red'>"+_9c.responseText+"</font>");
 }
 this.filegrid.container.unmask();
 };
-var _8f="object_id="+_85;
+var _a1="object_id="+_97;
 var url=this.xmlhttpurl+"delete";
-if(_83==="yes"){
+if(_95==="yes"){
 this.filegrid.container.mask("Deleting");
-this.asyncCon.request({url:url,params:_8f,method:"POST",callback:_87,scope:this});
+this.asyncCon.request({url:url,params:_a1,method:"POST",callback:_99,scope:this});
 }
 };
-this.delFolder=function(_91){
-var _92=this.treepanel.getSelectionModel().getSelectedNode();
-var _93=_92.parentNode;
-var id=_92.attributes["id"];
-var _95=function(_96,_97,_98){
-var _99=acs_lang_text.delete_error||"Sorry, there was an error trying to delete this item.";
-if(_97){
-if(_98.responseText!="1"){
-Ext.Msg.alert(acs_lang_text.error||"Error",_99+"<br><br><font color='red'>"+_98.responseText+"</font>");
+this.delFolder=function(_a3){
+var _a4=this.treepanel.getSelectionModel().getSelectedNode();
+var _a5=_a4.parentNode;
+var id=_a4.attributes["id"];
+var _a7=function(_a8,_a9,_aa){
+var _ab=acs_lang_text.delete_error||"Sorry, there was an error trying to delete this item.";
+if(_a9){
+if(_aa.responseText!="1"){
+Ext.Msg.alert(acs_lang_text.error||"Error",_ab+"<br><br><font color='red'>"+_aa.responseText+"</font>");
 }else{
-_93.fireEvent("click",_93);
-_93.removeChild(_92);
+_a5.fireEvent("click",_a5);
+_a5.removeChild(_a4);
 }
 }else{
-Ext.Msg.alert(acs_lang_text.error||"Error",_99+"<br><br><font color='red'>"+_98.responseText+"</font>");
+Ext.Msg.alert(acs_lang_text.error||"Error",_ab+"<br><br><font color='red'>"+_aa.responseText+"</font>");
 }
 };
-if(_91==="yes"){
-this.asyncCon.request({url:this.xmlhttpurl+"delete",params:"object_id="+id,method:"POST",callback:_95,scope:this});
+if(_a3==="yes"){
+this.asyncCon.request({url:this.xmlhttpurl+"delete",params:"object_id="+id,method:"POST",callback:_a7,scope:this});
 }
 };
 this.newFolder=function(){
 var te=this.te;
-var _9b=this.treepanel;
-var _9c=_9b.getSelectionModel().getSelectedNode();
-_9c.expand();
-var _9d=function(_9e,_9f,_a0){
-var _a1=acs_lang_text.new_folder_error||"Sorry, there was an error trying to create your new folder.";
-if(_9f){
-if(!isNaN(parseInt(_a0.responseText))){
-if(parseInt(_a0.responseText)!=0){
-var _a2=_9c.appendChild(new Ext.tree.TreeNode({text:acs_lang_text.new_folder_label||"New Folder",id:_a0.responseText,iconCls:"folder",singleClickExpand:true,attributes:{write_p:"t"}}));
-_9b.getSelectionModel().select(_a2);
-_a2.loaded=true;
-_a2.fireEvent("click",_a2);
+var _ad=this.treepanel;
+var _ae=_ad.getSelectionModel().getSelectedNode();
+_ae.expand();
+var _af=function(_b0,_b1,_b2){
+var _b3=acs_lang_text.new_folder_error||"Sorry, there was an error trying to create your new folder.";
+if(_b1){
+if(_b2.responseText){
+var _b4=eval(_b2.responseText);
+if(parseInt(_b4[0].id)!=0){
+var _b5=_ae.appendChild(new Ext.tree.TreeNode({text:_b4[0].pretty_folder_name,id:_b4[0].id,iconCls:"folder",singleClickExpand:true,attributes:{write_p:"t"}}));
+_ad.getSelectionModel().select(_b5);
+_b5.loaded=true;
+_b5.fireEvent("click",_b5);
 setTimeout(function(){
-te.editNode=_a2;
-te.startEdit(_a2.ui.textNode);
+te.editNode=_b5;
+te.startEdit(_b5.ui.textNode);
 },10);
 }else{
-Ext.Msg.alert(acs_lang_text.error||"Error",_a1+"<br><br><font color='red'>"+_a0.responseText+"</font>");
+Ext.Msg.alert(acs_lang_text.error||"Error",_b3+"<br><br><font color='red'>"+_b2.responseText+"</font>");
 }
 }
 }else{
-Ext.Msg.alert(acs_lang_text.error||"Error",_a1+"<br><br><font color='red'>"+_a0.responseText+"</font>");
+Ext.Msg.alert(acs_lang_text.error||"Error",_b3+"<br><br><font color='red'>"+_b2.responseText+"</font>");
 }
 };
-this.asyncCon.request({url:this.xmlhttpurl+"newblankfolder",params:"folder_id="+_9c.attributes["id"],method:"POST",callback:_9d,scope:this});
+this.asyncCon.request({url:this.xmlhttpurl+"newblankfolder",params:"folder_id="+_ae.attributes["id"],method:"POST",callback:_af,scope:this});
 };
-this.itemDblClick=function(_a3,i,e){
-var dm=_a3.getDataSource();
-var _a7=dm.getAt(i);
-if(_a7.get("type")=="folder"){
-var _a8=this.treepanel.getNodeById(_a7.get("id"));
-if(!_a8.parentNode.isExpanded()){
-_a8.parentNode.expand();
+this.itemDblClick=function(_b6,i,e){
+var dm=_b6.getDataSource();
+var _ba=dm.getAt(i);
+if(_ba.get("type")=="folder"){
+var _bb=this.treepanel.getNodeById(_ba.get("id"));
+if(!_bb.parentNode.isExpanded()){
+_bb.parentNode.expand();
 }
-_a8.fireEvent("click",_a8);
-_a8.expand();
+_bb.fireEvent("click",_bb);
+_bb.expand();
 }else{
-window.open(_a7.get("url"));
+window.open(_ba.get("url"));
 window.focus();
 }
 };
-this.loadFoldercontents=function(_a9,e){
-if(this.currentfolder!=null){
-this.treepanel.getNodeById(this.currentfolder).getUI().removeClass("x-tree-grayselected");
-}
-this.currentfolder=_a9.id;
-if(this.filegrid==null){
-var _ab=[{header:"",width:50,sortable:true,dataIndex:"icon"},{header:acs_lang_text.filename||"Filename",id:"filename",width:200,sortable:true,dataIndex:"title_and_name"},{header:acs_lang_text.size||"Size",sortable:true,dataIndex:"size"},{header:acs_lang_text.lastmodified||"Last Modified",sortable:true,dataIndex:"lastmodified"}];
-var _ac=new Ext.grid.ColumnModel(_ab);
-_ac.defaultSortable=true;
-var _ad=new Ext.data.JsonReader({totalProperty:"total",root:"foldercontents",id:"id"},[{name:"id",type:"int"},{name:"icon"},{name:"title"},{name:"filename"},{name:"type"},{name:"url"},{name:"write_p"},{name:"title_and_name"},{name:"size"},{name:"lastmodified"}]);
-var _ae=new Ext.data.HttpProxy({url:this.xmlhttpurl+"foldercontents"});
-var _af=new Ext.data.Store({proxy:_ae,reader:_ad,remoteSort:true});
-this.filegrid=new Ext.grid.Grid("files",{ds:_af,cm:_ac,autoHeight:false,autoWidth:true,autoSizeColumns:false,trackMouseOver:true,autoExpandColumn:"filename",enableColumnMove:false,enableColLock:false,enableColumnHide:false,loadMask:true,monitorWindowResize:true,enableDragDrop:true,ddGroup:"fileDD"});
+this.createFileGrid=function(){
+var _bc=[{header:"",width:50,sortable:true,dataIndex:"icon"},{header:acs_lang_text.filename||"Filename",id:"filename",width:200,sortable:true,dataIndex:"title_and_name"},{header:acs_lang_text.size||"Size",sortable:true,dataIndex:"size"},{header:acs_lang_text.lastmodified||"Last Modified",sortable:true,dataIndex:"lastmodified"}];
+var _bd=new Ext.grid.ColumnModel(_bc);
+_bd.defaultSortable=true;
+var _be=new Ext.data.JsonReader({totalProperty:"total",root:"foldercontents",id:"id"},[{name:"id",type:"int"},{name:"icon"},{name:"title"},{name:"filename"},{name:"type"},{name:"tags"},{name:"url"},{name:"write_p"},{name:"title_and_name"},{name:"size"},{name:"lastmodified"}]);
+var _bf=new Ext.data.HttpProxy({url:this.xmlhttpurl+"foldercontents"});
+var _c0=new Ext.data.Store({proxy:_bf,reader:_be,remoteSort:true});
+this.filegrid=new Ext.grid.Grid("files",{ds:_c0,cm:_bd,autoHeight:false,autoWidth:true,autoSizeColumns:false,trackMouseOver:true,autoExpandColumn:"filename",enableColumnMove:false,enableColLock:false,enableColumnHide:false,loadMask:true,monitorWindowResize:true,enableDragDrop:true,ddGroup:"fileDD"});
 this.filegrid.on("rowclick",function(){
 this.treepanel.getSelectionModel().getSelectedNode().getUI().removeClass("x-tree-selected");
 this.treepanel.getSelectionModel().getSelectedNode().getUI().addClass("x-tree-grayselected");
 },this,true);
 this.filegrid.on("rowdblclick",this.itemDblClick,this,true);
 this.filegrid.on("rowcontextmenu",this.showContext,this,true);
-var _b0=this.filegrid;
-var _b1=this;
-var _b2=new Ext.dd.DropTarget(_b0.container,{ddGroup:"fileDD",copy:false,notifyDrop:function(dd,e,_b5){
-var ds=_b0.getDataSource();
-var sm=_b0.getSelectionModel();
-var _b8=sm.getSelections();
+var _c1=this.filegrid;
+var _c2=this;
+var _c3=new Ext.dd.DropTarget(_c1.container,{ddGroup:"fileDD",copy:false,notifyDrop:function(dd,e,_c6){
+var ds=_c1.getDataSource();
+var sm=_c1.getSelectionModel();
+var _c9=sm.getSelections();
 if(dd.getDragData(e)){
-var _b9=dd.getDragData(e).rowIndex;
-if(typeof (_b9)!="undefined"){
+var _ca=dd.getDragData(e).rowIndex;
+if(typeof (_ca)!="undefined"){
 if(!this.copy){
-for(i=0;i<_b8.length;i++){
-ds.remove(ds.getById(_b8[i].id));
+for(i=0;i<_c9.length;i++){
+ds.remove(ds.getById(_c9[i].id));
 }
 }
-ds.insert(_b9,_b5.selections);
+ds.insert(_ca,_c6.selections);
 sm.clearSelections();
 }
 }
 }});
 this.filegrid.render();
 this.createGridPanel(this.filegrid,"center",{title:acs_lang_text.file_list||"File List",closable:false});
+};
+this.loadTagObjects=function(_cb){
+if(this.filegrid==null){
+this.createFileGrid();
 }
-this.filegrid.getDataSource().baseParams["folder_id"]=_a9.id;
-if(_a9.loading){
-_a9.on("expand",function(){
+this.treepanel.getSelectionModel().clearSelections();
+var id=_cb.substring(3,_cb.length);
+this.filegrid.getDataSource().baseParams["tag_id"]=id;
+this.filegrid.getDataSource().load();
+};
+this.loadFoldercontents=function(_cd,e){
+if(this.currentfolder!=null){
+this.treepanel.getNodeById(this.currentfolder).getUI().removeClass("x-tree-grayselected");
+}
+if(this.currenttag!=null){
+Ext.get(this.currenttag).setStyle("font-weight","normal");
+}
+this.currentfolder=_cd.id;
+if(this.filegrid==null){
+this.createFileGrid();
+}
+this.filegrid.getDataSource().baseParams["folder_id"]=_cd.id;
+this.filegrid.getDataSource().baseParams["tag_id"]="";
+if(_cd.loading){
+_cd.on("expand",function(){
 this.filegrid.getDataSource().load();
 }.createDelegate(this),true,{single:true});
 }else{
@@ -761,100 +841,103 @@ this.filegrid.getDataSource().load();
 }
 };
 this.renderTree=function(){
-var _ba=function(_bb,_bc,_bd){
-if(_bc){
-rootfolderobj=eval("("+_bd.responseText+")");
+var _cf=function(_d0,_d1,_d2){
+if(_d1){
+rootfolderobj=eval("("+_d2.responseText+")");
 this.rootfolder=new Ext.tree.AsyncTreeNode({text:rootfolderobj.text,draggable:false,id:rootfolderobj.id,singeClickExpand:true,attributes:rootfolderobj.attributes});
 if(rootfolderobj.attributes["write_p"]=="t"){
 this.toolbar=new Ext.Toolbar("headerpanel");
 this.toolbar.addButton({text:acs_lang_text.newfolder||"New Folder",icon:"/resources/ajax-filestorage-ui/icons/folder_add.png",cls:"x-btn-text-icon",handler:this.newFolder.createDelegate(this),scope:this});
 this.toolbar.addButton({text:acs_lang_text.uploadfile||"Upload Files",icon:"/resources/ajax-filestorage-ui/icons/add.png",cls:"x-btn-text-icon",handler:this.showUplddialog.createDelegate(this),scope:this});
+if(create_url_p){
 this.toolbar.addButton({text:acs_lang_text.createurl||"Create Url",icon:"/resources/ajax-filestorage-ui/icons/page_link.png",cls:"x-btn-text-icon",handler:this.showCreateUrldialog.createDelegate(this),scope:this});
-this.toolbar.addButton({text:acs_lang_text.deletefs||"Delete",icon:"/resources/ajax-filestorage-ui/icons/delete.png",cls:"x-btn-text-icon",handler:this.confirmDel.createDelegate(this),scope:this});
-}else{
-this.layout.getRegion("north").hide();
 }
+this.toolbar.addButton({text:acs_lang_text.deletefs||"Delete",icon:"/resources/ajax-filestorage-ui/icons/delete.png",cls:"x-btn-text-icon",handler:this.confirmDel.createDelegate(this),scope:this});
+}
+this.toolbar.addButton({text:acs_lang_text.download_archive||"Download Archive",icon:"/resources/ajax-filestorage-ui/icons/arrow_down.png",cls:"x-btn-text-icon",handler:function(){
+top.location.href="download-archive/index?object_id="+rootfolderobj.id;
+}.createDelegate(this),scrope:this});
 this.treepanel.setRootNode(this.rootfolder);
 this.treepanel.render();
-var _be=function(x){
-var _c0=this.treepanel.getNodeById(this.config.initOpenFolder);
-if(!_c0){
+var _d3=function(x){
+var _d5=this.treepanel.getNodeById(this.config.initOpenFolder);
+if(!_d5){
 var x=x+1;
-var _c1=this.config.pathToFolder[x];
-var _c2=this.treepanel.getNodeById(_c1);
-_c2.on("expand",_be.createDelegate(this,[x]),this,{single:true});
-_c2.expand(true);
+var _d6=this.config.pathToFolder[x];
+var _d7=this.treepanel.getNodeById(_d6);
+_d7.on("expand",_d3.createDelegate(this,[x]),this,{single:true});
+_d7.expand(true);
 }else{
-_c0.select();
-_c0.fireEvent("click",_c0);
+_d5.select();
+_d5.fireEvent("click",_d5);
 }
 };
-var _c3=function(){
+var _d8=function(){
 if(this.config.initOpenFolder){
-var _c4=this.treepanel.getNodeById(this.config.initOpenFolder);
-if(_c4){
-_c4.expand();
-_c4.fireEvent("click",_c4);
+var _d9=this.treepanel.getNodeById(this.config.initOpenFolder);
+if(_d9){
+_d9.expand();
+_d9.fireEvent("click",_d9);
 }else{
 var x=1;
-var _c6=this.treepanel.getNodeById(this.config.pathToFolder[x]);
-_c6.on("expand",_be.createDelegate(this,[x]),this,{single:true});
-_c6.expand(true);
+var _db=this.treepanel.getNodeById(this.config.pathToFolder[x]);
+_db.on("expand",_d3.createDelegate(this,[x]),this,{single:true});
+_db.expand(true);
 }
 }else{
 this.treepanel.fireEvent("click",this.rootfolder);
 }
 };
-this.rootfolder.on("expand",_c3,this,{single:true});
+this.rootfolder.on("expand",_d8,this,{single:true});
 this.rootfolder.expand();
 }else{
 Ext.Msg.alert(acs_lang_text.error||"Error",acs_lang_text.tree_render_error||"Sorry, we encountered an error rendering the tree panel");
 }
 };
-var _c7="package_id="+this.config.package_id;
+var _dc="package_id="+this.config.package_id;
 if(this.config.rootfolder){
-_c7=_c7+"&root_folder_id="+this.config.rootfolder;
+_dc=_dc+"&root_folder_id="+this.config.rootfolder;
 }
-this.asyncCon.request({url:this.xmlhttpurl+"getrootfolder",params:_c7,method:"POST",callback:_ba,scope:this});
+this.asyncCon.request({url:this.xmlhttpurl+"getrootfolder",params:_dc,method:"POST",callback:_cf,scope:this});
 };
 this.loadTreepanel=function(){
-var _c8=Ext.get("folderpanel").createChild({tag:"div",id:"folders"});
+var _dd=Ext.get("folderpanel").createChild({tag:"div",id:"folders"});
 this.treepanel=new Ext.tree.TreePanel("folders",{animate:true,loader:new Ext.tree.TreeLoader({dataUrl:this.xmlhttpurl+"loadnodes",baseParams:{package_id:this.config.package_id}}),enableDD:true,ddGroup:"fileDD",ddAppendOnly:true,containerScroll:true,rootVisible:true});
 this.te=new Ext.tree.TreeEditor(this.treepanel,{allowBlank:false,blankText:acs_lang_text.folder_name_required||"A folder name is required",selectOnFocus:true});
-this.te.on("beforestartedit",function(_c9,el,_cb){
-if(_c9.editNode.attributes.attributes.write_p=="t"){
+this.te.on("beforestartedit",function(_de,el,_e0){
+if(_de.editNode.attributes.attributes.write_p=="t"){
 return true;
 }else{
 Ext.Msg.alert(acs_lang_text.permission_denied||"Permission Denied",acs_lang_text.permission_denied||"Sorry, you do not have permission to rename this folder");
 return false;
 }
 },this,true);
-this.te.on("beforecomplete",function(_cc,_cd,_ce){
-var _cf=_cc.editNode.parentNode;
-var _d0=_cf.childNodes;
-for(x=0;x<_d0.length;x++){
-if(_d0[x].text==_cd&&_d0[x].id!=_cc.editNode.id){
+this.te.on("beforecomplete",function(_e1,_e2,_e3){
+var _e4=_e1.editNode.parentNode;
+var _e5=_e4.childNodes;
+for(x=0;x<_e5.length;x++){
+if(_e5[x].text==_e2&&_e5[x].id!=_e1.editNode.id){
 Ext.Msg.alert(acs_lang_text.duplicate_name||"Duplicate Name",acs_lang_text.duplicate_name_error||"Please enter a different name. The name you entered is already being used.");
 return false;
 }
 }
 return true;
 },this,true);
-this.te.on("complete",function(_d1,_d2,_d3){
-var _d4=function(_d5,_d6,_d7){
-var _d8=acs_lang_text.an_error_occurred||"An error occurred";
-var _d9=acs_lang_text.reverted||"Your changes have been reverted";
-if(_d6){
-if(_d7.responseText!=1){
-Ext.Msg.alert(acs_lang_text.error||"Error",_d8+": <br><br><font color='red'>"+_d7.responseText+"</font><br><br>"+_d9);
-_d1.editNode.setText(_d3);
+this.te.on("complete",function(_e6,_e7,_e8){
+var _e9=function(_ea,_eb,_ec){
+var _ed=acs_lang_text.an_error_occurred||"An error occurred";
+var _ee=acs_lang_text.reverted||"Your changes have been reverted";
+if(_eb){
+if(_ec.responseText!=1){
+Ext.Msg.alert(acs_lang_text.error||"Error",_ed+": <br><br><font color='red'>"+_ec.responseText+"</font><br><br>"+_ee);
+_e6.editNode.setText(_e8);
 }
 }else{
-Ext.Msg.alert(acs_lang_text.error||"Error",_d8+":<br><br><font color='red'>"+_d7.responseText+"</font><br><br>"+_d9);
-_d1.editNode.setText(_d3);
+Ext.Msg.alert(acs_lang_text.error||"Error",_ed+":<br><br><font color='red'>"+_ec.responseText+"</font><br><br>"+_ee);
+_e6.editNode.setText(_e8);
 }
 };
-this.asyncCon.request({url:this.xmlhttpurl+"editname",params:"newname="+_d2+"&object_id="+_d1.editNode.id+"&type=folder",method:"POST",callback:_d4,scope:this});
+this.asyncCon.request({url:this.xmlhttpurl+"editname",params:"newname="+_e7+"&object_id="+_e6.editNode.id+"&type=folder",method:"POST",callback:_e9,scope:this});
 },this,true);
 this.treepanel.on("click",this.loadFoldercontents,this,true);
 this.treepanel.on("nodedragover",function(e){
@@ -869,86 +952,101 @@ return false;
 }
 }
 },this,true);
-this.treepanel.on("beforenodedrop",function(_dc){
-var t=_dc.target;
-if(_dc.data.node){
-var n=_dc.dropNode;
+this.treepanel.on("beforenodedrop",function(_f1){
+var t=_f1.target;
+if(_f1.data.node){
+var n=_f1.dropNode;
 var p=n.parentNode;
-var _e0=_dc.data.node.id;
-var _e1=_dc.target.id;
-var _e2=function(_e3,_e4,_e5){
-var _e6=false;
-var _e7=acs_lang_text.an_error_occurred||"An error occurred";
-var _e8=acs_lang_text.reverted||"Your changes have been reverted";
-if(_e4){
-if(_e5.responseText!=1){
-Ext.Msg.alert(acs_lang_text.error||"Error",_e7+": <br><br><font color='read'>"+_e5.responseText+"</font><br><br>"+_e8);
-_e6=true;
+var _f5=_f1.data.node.id;
+var _f6=_f1.target.id;
+var _f7=function(_f8,_f9,_fa){
+var _fb=false;
+var _fc=acs_lang_text.an_error_occurred||"An error occurred";
+var _fd=acs_lang_text.reverted||"Your changes have been reverted";
+if(_f9){
+if(_fa.responseText!=1){
+Ext.Msg.alert(acs_lang_text.error||"Error",_fc+": <br><br><font color='read'>"+_fa.responseText+"</font><br><br>"+_fd);
+_fb=true;
 }
 }else{
 Ext.Msg.alert(acs_lang_text.error||"Error",acs_lang_text.error_and_reverted||"An error occurred. Your changes have been reverted");
-_e6=true;
+_fb=true;
 }
-if(_e6){
-_e3.target.removeChild(_e3.thenode);
-_e3.parent.appendChild(_e3.thenode);
-_e3.parent.loaded=false;
-_e3.parent.expand();
+if(_fb){
+_f8.target.removeChild(_f8.thenode);
+_f8.parent.appendChild(_f8.thenode);
+_f8.parent.loaded=false;
+_f8.parent.expand();
 }else{
-_e3.target.loaded=false;
-_e3.target.fireEvent("click",_e3.target);
-_e3.target.expand();
+_f8.target.loaded=false;
+_f8.target.fireEvent("click",_f8.target);
+_f8.target.expand();
 }
 };
-var _e9="file_ids="+_e0+"&folder_target_id="+_e1;
+var _fe="file_ids="+_f5+"&folder_target_id="+_f6;
 var url=this.xmlhttpurl+"move";
-this.asyncCon.request({url:url,params:_e9,method:"POST",callback:_e2,scope:this,target:t,parent:p,thenode:n});
+this.asyncCon.request({url:url,params:_fe,method:"POST",callback:_f7,scope:this,target:t,parent:p,thenode:n});
 }else{
-var _eb=_dc.target.id;
-var _ec=[];
-for(var x=0;x<_dc.data.selections.length;x++){
-_ec[x]=_dc.data.selections[x].data.id;
-if(_dc.data.selections[x].data.type=="folder"){
-if(this.treepanel.getNodeById(_dc.data.selections[x].data.id)){
-var _ee=this.treepanel.getNodeById(_dc.data.selections[x].data.id).parentNode;
-_ee.loaded=false;
-_ee.removeChild(this.treepanel.getNodeById(_dc.data.selections[x].data.id));
+var _100=_f1.target.id;
+var _101=[];
+for(var x=0;x<_f1.data.selections.length;x++){
+_101[x]=_f1.data.selections[x].data.id;
+if(_f1.data.selections[x].data.type=="folder"){
+if(this.treepanel.getNodeById(_f1.data.selections[x].data.id)){
+var _103=this.treepanel.getNodeById(_f1.data.selections[x].data.id).parentNode;
+_103.loaded=false;
+_103.removeChild(this.treepanel.getNodeById(_f1.data.selections[x].data.id));
 }
 }
 }
-var _e2=function(_ef,_f0,_f1){
-if(_f0&&_f1.responseText==1){
+var _f7=function(_104,_105,_106){
+if(_105&&_106.responseText==1){
 var dm=this.filegrid.getDataSource();
-var _f3=this.filegrid.getSelectionModel().getSelections();
-for(var x=0;x<_f3.length;x++){
-dm.remove(_f3[x]);
+var _108=this.filegrid.getSelectionModel().getSelections();
+for(var x=0;x<_108.length;x++){
+dm.remove(_108[x]);
 }
-_ef.target.loaded=false;
+_104.target.loaded=false;
 }else{
 Ext.Msg.alert(acs_lang_text.error||"Error",acs_lang_text.error_move||"Sorry, an error occurred moving this item. A file with the same name may already exist in the target folder.");
 }
 };
-var _e9="folder_target_id="+_eb+"&file_ids="+_ec;
+var _fe="folder_target_id="+_100+"&file_ids="+_101;
 var url=this.xmlhttpurl+"move";
-var _f5=new Ext.data.Connection();
-_f5.request({url:url,params:_e9,method:"POST",callback:_e2,scope:this,target:t});
+var _10a=new Ext.data.Connection();
+_10a.request({url:url,params:_fe,method:"POST",callback:_f7,scope:this,target:t});
 }
 },this,true);
 this.renderTree();
 };
 this.initLayout=function(){
-var _f6=document.body;
+var _10b=document.body;
 if(this.config!=null&&this.config.layoutdiv){
-_f6=this.config.layoutdiv;
+_10b=this.config.layoutdiv;
 }
-this.layout=new Ext.BorderLayout(_f6,{north:{split:false,titlebar:false,autoScroll:false,initialSize:25},west:{autoScroll:true,split:true,initialSize:350,titlebar:true,collapsible:true,minSize:200,maxSize:500},center:{autoScroll:true}});
+this.layout=new Ext.BorderLayout(_10b,{north:{split:false,titlebar:false,autoScroll:false,initialSize:25},west:{autoScroll:true,split:true,initialSize:350,titlebar:true,collapsible:true,minSize:200,maxSize:500},center:{autoScroll:true}});
+this.innerlayout=new Ext.BorderLayout("leftpanel",{center:{split:true,titlebar:false,autoScroll:true},south:{split:true,titlebar:true,title:"Tags",autoScroll:true,initialSize:130}});
 this.layout.beginUpdate();
 this.layout.add("north",new Ext.ContentPanel("headerpanel",{autoCreate:true}));
-this.layout.add("west",new Ext.ContentPanel("folderpanel",{autoCreate:true,autoScroll:true,fitToFrame:true,fitContainer:true}));
+this.layout.add("west",new Ext.NestedLayoutPanel(this.innerlayout));
+this.innerlayout.add("center",new Ext.ContentPanel("folderpanel",{autoCreate:true,autoScroll:true,fitToFrame:true,fitContainer:true}));
+this.tagcloudpanel=new Ext.ContentPanel("tagpanel",{autoCreate:true,autoScroll:true,fitToFrame:true,fitContainer:true});
+this.innerlayout.add("south",this.tagcloudpanel);
+this.tagcloudpanel.load("/ajaxfs2/xmlhttp/tagcloud?package_id="+this.config.package_id);
+this.tagcloudpanel.getEl().on("click",function(obj,el){
+if(el.tagName=="A"){
+if(this.currenttag!=null){
+Ext.get(this.currenttag).setStyle("font-weight","normal");
+}
+Ext.get(el).setStyle("font-weight","bold");
+this.currenttag=el.id;
+this.loadTagObjects(el.id);
+}
+},this);
 this.layout.endUpdate();
-var _f7={autoCreate:true,autoScroll:true,modal:false,autoTabs:true,width:300,height:300,shadow:false,shim:false,minWidth:300,minHeight:300,proxyDrag:true,fixedcenter:true};
-this.upldDialog=new Ext.BasicDialog("uploadDlg",_f7);
-this.createurlDialog=new Ext.BasicDialog("urlDlg",_f7);
+var _10e={autoCreate:true,autoScroll:true,modal:false,autoTabs:true,width:300,height:300,shadow:false,shim:false,minWidth:300,minHeight:300,proxyDrag:true,fixedcenter:true};
+this.upldDialog=new Ext.BasicDialog("uploadDlg",_10e);
+this.createurlDialog=new Ext.BasicDialog("urlDlg",_10e);
 Ext.get(document.body).createChild({tag:"div",id:"files"});
 };
 this.initObj=function(){

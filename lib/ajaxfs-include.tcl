@@ -11,7 +11,15 @@
 # - gray
 # - vista
 
+if { [exists_and_not_null theme] } {
+    set theme "gray"
+}
+
+set compressjs [parameter::get -package_id [ajaxfs::get_package_id] -parameter "compressjs" -default 0]
+set debug [parameter::get -package_id [ajaxfs::get_package_id] -parameter "debug" -default 1]
+
 set user_id [ad_conn user_id]
+set create_url_p [parameter::get -package_id $package_id -parameter "EnableCreateUrl" -default 1]
 
 if { [exists_and_not_null root_folder_id] } {
     if {  ![db_0or1row "get_folder_name" "select name as instance_name from fs_folders where folder_id = :root_folder_id"] } {

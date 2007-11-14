@@ -8,21 +8,25 @@
     <singleton-p>f</singleton-p>
     <auto-mount>ajaxfs2</auto-mount>
 
-    <version name="0.8d" url="http://openacs.org/repository/download/apm/ajax-filestorage-ui-0.8d.apm">
+    <version name="0.81d" url="http://openacs.org/repository/download/apm/ajax-filestorage-ui-0.81d.apm">
         <owner url="mailto:ham@solutiongrove.com">Hamilton Chua</owner>
         <release-date>2006-06-01</release-date>
         <vendor url="http://www.solutiongrove.com">Solutiongrove</vendor>
         <maturity>0</maturity>
 
-        <provides url="ajax-filestorage-ui" version="0.8d"/>
-        <requires url="ajaxhelper" version="0.1d"/>
+        <provides url="ajax-filestorage-ui" version="0.81d"/>
+        <requires url="ajaxhelper" version="0.8d"/>
         <requires url="file-storage" version="5.1.5d3"/>
+        <requires url="categories" version="1.1"/>
 
         <callbacks>
+            <callback type="after-mount"  proc="ajaxfs::apm::after_mount"/>
+            <callback type="after-upgrade"  proc="ajaxfs::apm::after_upgrade"/>
         </callbacks>
         <parameters>
             <parameter datatype="number"  min_n_values="1"  max_n_values="1"  name="compressjs"  default="0" description="Set this parameter to 1 if you wish to use ajaxfs.js.gz, the compressed version of ajaxfs. If debug is set to 1, this parameter is ignored."/>
             <parameter datatype="number"  min_n_values="1"  max_n_values="1"  name="debug"  default="0" description="Set this parameter to 1 so that ajaxfs uses ajaxfs-debug.js instead of ajaxfs.js to debug the javascript"/>
+            <parameter datatype="number"  min_n_values="1"  max_n_values="1"  name="CategoryTreeId"  default="0" description="The category tree to use for tagging files"/>
         </parameters>
 
     </version>

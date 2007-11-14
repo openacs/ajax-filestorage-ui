@@ -5,27 +5,31 @@
 <title>@page_title@</title>
 
 <link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext/resources/css/ext-all.css">
+<if @theme@ not nil>
+    <link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext/resources/css/ytheme-@theme@.css">
+</if>
 <link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/ajaxfs.css">
 <script type="text/javascript" src="http://yui.yahooapis.com/2.3.0/build/utilities/utilities.js"></script> 
 <script type="text/javascript" src="/resources/ajaxhelper/ext/adapter/yui/ext-yui-adapter.js"></script>
 <script type="text/javascript" src="/resources/ajaxhelper/ext/ext-all.js"></script>
 <script type="text/javascript" src="/resources/ajax-filestorage-ui/swfupload/swfupload.js"></script>
-<script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs-min.js"></script>
-
-<script type="text/javascript">
+<script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs.js"></script>
 <if @options@ defined>
+<script type="text/javascript">
+// enable or disable create_url
+var create_url_p = @create_url_p@;
 // acs-lang
 var acs_lang_text = {
         newfolder:"#file-storage.Create_a_new_folder#",
         uploadfile:"#file-storage.Add_File#",
         createurl:"#file-storage.Create_a_URL#",
         deletefs:"#file-storage.Delete#",
-        filename:"#file-storage.File#",
+        filename:"#ajax-filestorage-ui.File#",
         size:"#file-storage.Size#",
         lastmodified:"#file-storage.Last_Modified#",
         rename:"#file-storage.Rename#",
         permissions:"#file-storage.Permissions#",
-        linkaddress:"#file-storage.CopyLink#",
+        linkaddress:"#ajax-filestorage-ui.CopyLink#",
         upload: "#file-storage.Upload#",
         cancel: "#ajax-filestorage-ui.Cancel#",
         close: "#ajax-filestorage-ui.Close#",
@@ -71,15 +75,20 @@ var acs_lang_text = {
         file_title: "#ajax-filestorage-ui.Title#",
         file_description: "#ajax-filestorage-ui.Description#",
         multiple_files: "#ajax-filestorage-ui.MultipleFiles#",
-        multiple_files_msg: "#ajax-filestorage-ui.ThisIsAZip#"
+        multiple_files_msg: "#ajax-filestorage-ui.ThisIsAZip#",
+        download_archive: "#ajax-filestorage-ui.DownloadArchive#"
 }
+Ext.onReady(function() { 
+    Ext.get("fscontainer").setHeight(400,false);
+    Ext.get("fscontainer").update(" ");
+});
 var fsInstance = new ajaxfs({@options;noquote@});
-</if>
 </script>
-
+</if>
 
 </head>
-<body>
+<body>2
 <div id="fscontainer" style="width:100%;height:400px"></div>
+<div id="leftpanel"></div>
 </body>
 </html>

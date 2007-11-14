@@ -7,7 +7,8 @@ ad_page_contract {
     @creation-date 2007-06-03
 
 } {
-    folder_id:integer,notnull
+    folder_id:integer,optional
+    tag_id:integer,optional
     {sort "fs_objects.title"}
     {dir "DESC"}
 }
@@ -40,13 +41,52 @@ set n_past_days 99999
 # sorting **********
 set orderby ""
 if { [exists_and_not_null sort] } {
-    if {$sort == "title_and_name"} { set sort "fs_objects.title" }
+    if {$sort == "title_and_name"} { set sort "lower(fs_objects.title)" }
     if {$sort == "size"} { set sort "fs_objects.content_size" }
     if {$sort == "lastmodified"} { set sort "fs_objects.last_modified" }
     set orderby "order by $sort $dir"
 }
 
-db_multirow -extend { filename icon last_modified_pretty content_size_pretty download_url object_counter file_list_start file_list_end write_p} contents dbqd.file-storage.www.folder-chunk.select_folder_contents { } {
+if { [exists_and_not_null tag_id] } {
+    set query_name "select_folder_contents"
+    set query "select fs_objects.object_id,
+                   fs_objects.mime_type,
+                   fs_objects.name,
+                   fs_objects.live_revision,
+                   fs_objects.type,
+                   fs_objects.pretty_type,
+                   to_char(fs_objects.last_modified, 'YYYY-MM-DD HH24:MI:SS') as last_modified_ansi,
+                   fs_objects.content_size,
+                   fs_objects.url,
+                   fs_objects.sort_key,
+                   fs_objects.sort_key as sort_key_desc,
+                   fs_objects.file_upload_name,
+                   fs_objects.title,
+                   case
+                     when '$folder_path' is null
+                     then fs_objects.file_upload_name
+                     else '$folder_path' || '/' || fs_objects.file_upload_name
+                   end as file_url,
+                   case
+                     when fs_objects.last_modified >= (now() - cast('$n_past_days days' as interval))
+                     then 1
+                     else 0
+                   end as new_p
+            from fs_objects
+            where fs_objects.object_id in (select object_id from category_object_map where category_id=$tag_id)
+            and exists (select 1
+                   from acs_object_party_privilege_map m
+                   where m.object_id = fs_objects.object_id
+                     and m.party_id = $viewing_user_id
+                     and m.privilege = 'read')
+            $orderby"
+} else {
+    set query_name dbqd.file-storage.www.folder-chunk.select_folder_contents
+    set query ""
+}
+
+
+db_multirow -extend { filename icon last_modified_pretty content_size_pretty download_url object_counter file_list_start file_list_end write_p tags} contents $query_name $query  {
 
     if { ![exists_and_not_null title] } { set title $name }
 
@@ -104,6 +144,14 @@ db_multirow -extend { filename icon last_modified_pretty content_size_pretty dow
     } else {
         set download_url "javascript:void(0)"
         set filename " "
+    }
+
+    # get the tags for this fs item
+    set tag_list [db_list "get_categories" "select name from category_translations where locale='en_US' and category_id in (select category_id from category_object_map where object_id=:object_id)"]
+    if { [llength $tag_list] >0 } {
+        set tags [join $tag_list ","]
+    } else {
+        set tags ""
     }
 
     if { [permission::permission_p -party_id $viewing_user_id -object_id $object_id -privilege "write"] == "t" } { set write_p "true" } else { set write_p "false" }

@@ -247,7 +247,7 @@ function uploadStart(fileObj,ajaxfsobj) {
         var folderid = ajaxfsobj.currentfolder;
         var foldername = ajaxfsobj.treepanel.getNodeById(folderid).text;
         var progress = new FileProgress(fileObj, this.getSetting("progress_target"));
-        progress.SetStatus( upload_txt + "<b>"+foldername+"</b><br><input type='checkbox' id='zip"+fileObj.id+"' onclick=\"if(document.getElementById('zip"+fileObj.id+"').checked) { fsInstance.swfu.addFileParam('"+fileObj.id+"','unpack_p','1') } else { fsInstance.swfu.removeFileParam('"+fileObj.id+"','unpack_p') }\"> "+ zip_txt);
+        progress.SetStatus( upload_txt + "<b>"+foldername+"</b><br>Title: <input type='text' onblur=\"fsInstance.swfu.removeFileParam('"+fileObj.id+"','filetitle');fsInstance.swfu.addFileParam('"+fileObj.id+"','filetitle',this.value)\">(optional)<br><input type='checkbox' id='zip"+fileObj.id+"' onclick=\"if(document.getElementById('zip"+fileObj.id+"').checked) { fsInstance.swfu.addFileParam('"+fileObj.id+"','unpack_p','1') } else { fsInstance.swfu.removeFileParam('"+fileObj.id+"','unpack_p') }\"> "+ zip_txt);
         progress.ToggleCancel(true, this);
         this.addFileParam(fileObj.id, "folder_id", folderid);
         ajaxfsobj.upldDialog.buttons[0].enable();
@@ -383,6 +383,9 @@ function ajaxfs(configObj) {
     // holds a reference to the tree panel
     this.treepanel = null;
 
+    // hold reference to tagcloud panel
+    this.tagcloudpanel = null;
+
     // holds a reference to the tree editor
     this.te = null;
 
@@ -397,6 +400,9 @@ function ajaxfs(configObj) {
 
     // holds the id of the currently selected node in the tree
     this.currentfolder = null;
+
+    // currently selected tag
+    this.currenttag = null;
 
     // reusable aync data connection
     this.asyncCon = new Ext.data.Connection();
@@ -520,14 +526,23 @@ function ajaxfs(configObj) {
                                 if (response.responseText != 1) {
                                     Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt + ": <br><br><font color='red'>"+response.responseText+"</font><br><br>"+err_msg_txt2);
                                 } else {
-                                    if(nodetype!="folder"&&nodesubtitle===" ") { nodesubtitle = node.get("title") }
+                                    if(nodetype!="folder"&&nodesubtitle===" ") { 
+                                        nodesubtitle = node.get("title");
+                                        node.set("filename",nodesubtitle);
+                                    }
                                     if(nodetype=="folder") { this.treepanel.getNodeById(nodeid).setText(text) }
+                                    nodetags = node.get("tags");
+                                    if(nodetags != "") {
+                                        var taghtml = "<div id='tagscontainer_"+nodeid+"' style='color:blue'><div style='float:left'>Tags:</div><span id='tagslist_"+nodeid+"' style='float:left'>"+nodetags+"</span></div>";
+                                    } else {
+                                        var taghtml = "<div id='tagscontainer_"+nodeid+"' style='color:blue'></div>";;
+                                    }
                                     node.set("title",text);
-                                    node.set("title_and_name","<span id='title"+nodeid+"'>"+text+"</span><br><font style='font-size:10px;color:#666666'><span id='subtitle"+nodeid+"'>"+nodesubtitle+"</span></font>")
+                                    node.set("title_and_name","<span id='title"+nodeid+"'>"+text+"</span><br><font style='font-size:10px;color:#666666'><span id='subtitle"+nodeid+"'>"+nodesubtitle+"</span></font>"+taghtml)
                                     node.commit();
                                 }
                             } else {
-                                Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_text+":<br><br><font color='red'>"+response.responseText+"</font><br><br>"+err_msg_txt2);
+                                Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+":<br><br><font color='red'>"+response.responseText+"</font><br><br>"+err_msg_txt2);
                             }
                         }
         
@@ -574,58 +589,149 @@ function ajaxfs(configObj) {
         newwindow.focus();
     }
 
+    // redirect to object views for a file
+    this.viewsRedirect = function() {
+        var node =  this.filegrid.getSelectionModel().getSelected();
+        var object_id = node.get("id");
+        window.open(window.location.protocol+"//"+window.location.hostname+"/o/"+object_id+"/info");
+        window.focus();
+    }
+
+
+    // prompt to enter a tag for the selected fs element
+    this.promptTag = function() {
+
+        var ajaxfsobj = this;
+        var node =  ajaxfsobj.filegrid.getSelectionModel().getSelected();
+        var object_id = node.get("id");
+
+
+        Ext.Msg.prompt('Tag', 'Enter or edit one or more tags. Seperate tags with commas (,):', function(btn, text) {
+            if (btn == 'ok') {
+                // process text value ...
+                var callback = function(option,success,response) {
+                    if(success) {
+                        node.set('tags',text);
+                        Ext.get("tagscontainer_"+object_id).update("Tag:<span id='tagslist_"+text+"'>"+text+"</span>");
+                        this.tagcloudpanel.load("/ajaxfs2/xmlhttp/tagcloud?package_id="+this.config.package_id);
+                    }
+                }
+                ajaxfsobj.asyncCon.request({url:ajaxfsobj.xmlhttpurl+"addtag",
+                    params: "object_id="+object_id+"&tags="+text+"&package_id="+ajaxfsobj.config.package_id,
+                    method:"POST",
+                    callback: callback,
+                    scope: ajaxfsobj
+                });
+            }
+        });
+
+        if (document.getElementById("tagslist_"+object_id)) {
+            var prompt_text_el = YAHOO.util.Dom.getElementsByClassName('ext-mb-input', 'input','x-msg-box'); 
+            prompt_text_el[0].value=document.getElementById("tagslist_"+object_id).innerHTML;
+            prompt_text_el[0].select();
+        }
+
+    }
+
+    // download archive function
+    this.downloadArchive = function() {
+        var node =  this.filegrid.getSelectionModel().getSelected();
+        var object_id = node.get("id");
+        top.location.href="download-archive/?object_id="+object_id;
+    }
+
     // generate a context bar
     this.showContext = function(grid,i,e) {
         e.stopEvent();
-        if(this.contextmenu == null) {
-            // create the menus
-            this.contextmenu = new Ext.menu.Menu({
-                id: 'rightclickmenu',
-                items: [
-                new Ext.menu.Item({
-                    text: acs_lang_text.deletefs || 'Delete',
-                    icon: '/resources/ajax-filestorage-ui/icons/delete.png',
-                    handler: this.confirmDel.createDelegate(this)
-                }),
-                new Ext.menu.Item({
-                    text: acs_lang_text.rename || 'Rename',
-                    icon: '/resources/ajax-filestorage-ui/icons/page_edit.png',
-                    handler: this.fileRename.createDelegate(this)
-                }),
-                new Ext.menu.Item({
-                    text: acs_lang_text.linkaddress || 'Copy Link Address',
-                    icon: '/resources/ajax-filestorage-ui/icons/page_copy.png',
-                    handler: this.linkCopy.createDelegate(this)
-                }), 
-                new Ext.menu.Item({
-                    text: acs_lang_text.permissions || 'Permissions',
-                    icon: '/resources/ajax-filestorage-ui/icons/group_key.png',
-                    handler: this.permsRedirect.createDelegate(this)
-                }), 
-                new Ext.menu.Item({
-                    text: acs_lang_text.properties || 'Properties',
-                    icon: '/resources/ajax-filestorage-ui/icons/page_edit.png',
-                    handler: this.propertiesRedirect.createDelegate(this)
-                })  ]
-            });
 
-        }
-        // disable rename, copy link, permissions and revisions if more than one node item from the view is selected
-        if (grid.getSelectionModel().getCount() > 1) {
-            this.contextmenu.items.items[1].disable();
-            this.contextmenu.items.items[2].disable();
-            this.contextmenu.items.items[3].disable();
-            this.contextmenu.items.items[4].disable();
+        var dm = grid.getDataSource();
+        var record = dm.getAt(i);
+        var object_type = record.get("type");
+        var recordid = record.get("id");
+        
+        if( object_type == "folder") {
+            var openitem_txt = "Open";
         } else {
-            this.contextmenu.items.items[1].enable();
-            this.contextmenu.items.items[2].enable();
-            this.contextmenu.items.items[3].enable();
-            var node =  this.filegrid.getSelectionModel().getSelected();
-            var object_type = node.get("type");
-            if (object_type == "folder" || object_type == "url") {
-                this.contextmenu.items.items[4].disable();
+            var openitem_txt = "Download";
+        }
+
+        // create the menus
+        this.contextmenu = new Ext.menu.Menu({
+            id: 'rightclickmenu',
+            items: [
+            new Ext.menu.Item({
+                text: openitem_txt,
+                icon: "/resources/ajax-filestorage-ui/icons/page_white.png",
+                handler: this.itemDblClick.createDelegate(this,[grid, i, e],false)
+            }),
+            new Ext.menu.Item({
+                text: 'Tag',
+                icon: '/resources/ajax-filestorage-ui/icons/tag_blue.png',
+                handler: this.promptTag.createDelegate(this)
+            }),
+            new Ext.menu.Item({
+                text: 'Views',
+                icon: '/resources/ajax-filestorage-ui/icons/camera.png',
+                handler: this.viewsRedirect.createDelegate(this)
+            }),
+            new Ext.menu.Item({
+                text: acs_lang_text.deletefs || 'Delete',
+                icon: '/resources/ajax-filestorage-ui/icons/delete.png',
+                handler: this.confirmDel.createDelegate(this)
+            }),
+            new Ext.menu.Item({
+                text: acs_lang_text.rename || 'Rename',
+                icon: '/resources/ajax-filestorage-ui/icons/page_edit.png',
+                handler: this.fileRename.createDelegate(this)
+            }),
+            new Ext.menu.Item({
+                text: acs_lang_text.linkaddress || 'Copy Link Address',
+                icon: '/resources/ajax-filestorage-ui/icons/page_copy.png',
+                handler: this.linkCopy.createDelegate(this)
+            }), 
+            new Ext.menu.Item({
+                text: acs_lang_text.permissions || 'Permissions',
+                icon: '/resources/ajax-filestorage-ui/icons/group_key.png',
+                handler: this.permsRedirect.createDelegate(this)
+            }), 
+            new Ext.menu.Item({
+                text: acs_lang_text.properties || 'Properties',
+                icon: '/resources/ajax-filestorage-ui/icons/page_edit.png',
+                handler: this.propertiesRedirect.createDelegate(this)
+            }), 
+            new Ext.menu.Item({
+                text: acs_lang_text.download_archive || 'Download archive',
+                icon: '/resources/ajax-filestorage-ui/icons/arrow_down.png',
+                handler: this.downloadArchive.createDelegate(this)
+            })  ]
+        });
+
+        // disable open/download, rename, copy link, permissions and revisions if more than one node item from the view is selected
+        if (grid.getSelectionModel().getCount() > 1) {
+            this.contextmenu.items.items[0].hide();
+            this.contextmenu.items.items[1].hide();
+            this.contextmenu.items.items[2].hide();
+            this.contextmenu.items.items[3].show();
+            this.contextmenu.items.items[4].hide();
+            this.contextmenu.items.items[5].hide();
+            this.contextmenu.items.items[6].hide();
+            this.contextmenu.items.items[7].hide();
+            this.contextmenu.items.items[8].hide();
+        } else {
+            this.contextmenu.items.items[0].show();
+            this.contextmenu.items.items[2].show();
+            this.contextmenu.items.items[3].show();
+            this.contextmenu.items.items[4].show();
+            this.contextmenu.items.items[5].show();
+            this.contextmenu.items.items[6].show();
+            if (object_type == "folder") {
+                this.contextmenu.items.items[1].hide();
+                this.contextmenu.items.items[7].hide();
+                this.contextmenu.items.items[8].show();
             } else {
-                this.contextmenu.items.items[4].enable();
+                this.contextmenu.items.items[1].show();
+                this.contextmenu.items.items[7].show();
+                this.contextmenu.items.items[8].hide();
             }
         }
         
@@ -953,135 +1059,159 @@ function ajaxfs(configObj) {
         }
     }
 
-    // loads the content of the given folder
+    // creates the file grid, if it's not yet created
+    this.createFileGrid = function() {
+        var cols = [{header: "", width: 50,sortable: true, dataIndex: 'icon'},
+                    {header: acs_lang_text.filename || "Filename", id:'filename', width: 200, sortable: true, dataIndex: 'title_and_name'},
+                    {header: acs_lang_text.size || "Size", sortable: true, dataIndex: 'size'},
+                    {header: acs_lang_text.lastmodified || "Last Modified", sortable: true, dataIndex: 'lastmodified'}];
+
+        var colModel = new Ext.grid.ColumnModel(cols);
+        colModel.defaultSortable=true;
+
+        var reader = new Ext.data.JsonReader({totalProperty: 'total', root: 'foldercontents', id: 'id'}, [ 
+                                                    {name:'id', type: 'int'},
+                                                    {name:'icon'},
+                                                    {name:'title'},
+                                                    {name:'filename'},
+                                                    {name:'type'},
+                                                    {name:'tags'},
+                                                    {name:'url'},
+                                                    {name:'write_p'},
+                                                    {name:'title_and_name'},
+                                                    {name:'size'},
+                                                    {name:'lastmodified'}] );
+
+
+        var proxy = new Ext.data.HttpProxy( {
+                        url : this.xmlhttpurl+ 'foldercontents'
+                    } );
+
+        var dataModel = new Ext.data.Store({proxy: proxy, reader: reader, remoteSort: true});
+
+        this.filegrid = new Ext.grid.Grid('files',{ 
+                    ds: dataModel,
+                    cm: colModel,
+                    autoHeight: false,
+                    autoWidth: true,
+                    autoSizeColumns: false,
+                    trackMouseOver: true,
+                    autoExpandColumn: 'filename',
+                    enableColumnMove: false,
+                    enableColLock: false,
+                    enableColumnHide: false,
+                    loadMask: true,
+                    monitorWindowResize: true,
+                    enableDragDrop: true,
+                    ddGroup:'fileDD'
+            });
+
+        // grid listeners
+
+        // Row Click
+        // when a grid row is clicked, change the highlight on the currently selected folder
+        //  this is similar to windows explorer behavior
+        this.filegrid.on("rowclick",function() {
+            this.treepanel.getSelectionModel().getSelectedNode().getUI().removeClass("x-tree-selected");
+            this.treepanel.getSelectionModel().getSelectedNode().getUI().addClass("x-tree-grayselected");
+        }, this,true);
+
+        // Row Double Click
+        this.filegrid.on("rowdblclick",this.itemDblClick,this,true);
+
+        // Row Right Click
+        this.filegrid.on("rowcontextmenu",this.showContext,this,true);
+
+        // Sort Rows via Drag & Drop
+        var thegrid = this.filegrid;
+        var ajaxfsobj = this;
+        var ddrow = new Ext.dd.DropTarget(thegrid.container, {
+            ddGroup : 'fileDD',
+            copy:false,
+            notifyDrop : function(dd, e, data){
+                var ds=thegrid.getDataSource();
+                var sm=thegrid.getSelectionModel();
+                var rows=sm.getSelections();
+                if(dd.getDragData(e)) {
+                    var cindex=dd.getDragData(e).rowIndex;
+                    if(typeof(cindex) != "undefined") {
+                        if (!this.copy){
+                            for(i = 0; i < rows.length; i++) {
+                                ds.remove(ds.getById(rows[i].id));
+                            }
+                        }
+                        ds.insert(cindex,data.selections);
+                        sm.clearSelections();
+                    }
+
+                    // ** CSM SPECIFIC **
+                    // send an xmlhttp request to update the order_n of fs_objects
+                    /*
+                    var params = "";
+                    var dm = thegrid.getDataSource();
+                    for(var i = 0;i<dm.getCount(); i++) {
+                        var el_id = dm.getAt(i);
+                        params = params + "&object_ids="+el_id.get('id');
+                    }
+        
+                    var callback = function(option,success,response) {
+                        if(!success) {
+                            // fail
+                            // TODO :return a warning message here
+                        }
+                    }
+            
+                    ajaxfsobj.asyncCon.request({url:ajaxfsobj.xmlhttpurl+"sort-files",
+                        params: params,
+                        method:"POST",
+                        callback: callback,
+                        scope: ajaxfsobj
+                    });
+                    */
+                }
+            }
+        });
+
+        // render and put grid into the center panel
+        this.filegrid.render();
+        this.createGridPanel(this.filegrid,'center',{title:acs_lang_text.file_list || 'File List',closable:false});
+    }
+
+    // loads the objects associted with a tag
+    this.loadTagObjects = function (tagid) {
+
+        // create the filegrid object
+        if(this.filegrid == null) {
+            this.createFileGrid();
+        }
+
+        this.treepanel.getSelectionModel().clearSelections();
+        var id = tagid.substring(3,tagid.length);
+        this.filegrid.getDataSource().baseParams['tag_id'] = id;
+        this.filegrid.getDataSource().load();
+    }
+
+     // loads the content of the given folder
     this.loadFoldercontents = function(node,e) {
         // remove the gray class from last selected tree
         if (this.currentfolder != null) {
             this.treepanel.getNodeById(this.currentfolder).getUI().removeClass("x-tree-grayselected");
         }
 
+        if (this.currenttag != null) { Ext.get(this.currenttag).setStyle('font-weight','normal') }
+
         // currently selected folder
         this.currentfolder = node.id;
 
-        // fetch the folder contents
+        // create the filegrid object
         if(this.filegrid == null) {
-
-            var cols = [{header: "", width: 50,sortable: true, dataIndex: 'icon'},
-                        {header: acs_lang_text.filename || "Filename", id:'filename', width: 200, sortable: true, dataIndex: 'title_and_name'},
-                        {header: acs_lang_text.size || "Size", sortable: true, dataIndex: 'size'},
-                        {header: acs_lang_text.lastmodified || "Last Modified", sortable: true, dataIndex: 'lastmodified'}];
-
-            var colModel = new Ext.grid.ColumnModel(cols);
-            colModel.defaultSortable=true;
-
-            var reader = new Ext.data.JsonReader({totalProperty: 'total', root: 'foldercontents', id: 'id'}, [ 
-                                                        {name:'id', type: 'int'},
-                                                        {name:'icon'},
-                                                        {name:'title'},
-                                                        {name:'filename'},
-                                                        {name:'type'},
-                                                        {name:'url'},
-                                                        {name:'write_p'},
-                                                        {name:'title_and_name'},
-                                                        {name:'size'},
-                                                        {name:'lastmodified'}] );
-
-
-            var proxy = new Ext.data.HttpProxy( {
-                            url : this.xmlhttpurl+ 'foldercontents'
-                        } );
-    
-            var dataModel = new Ext.data.Store({proxy: proxy, reader: reader, remoteSort: true});
-
-            this.filegrid = new Ext.grid.Grid('files',{ 
-                        ds: dataModel,
-                        cm: colModel,
-                        autoHeight: false,
-                        autoWidth: true,
-                        autoSizeColumns: false,
-                        trackMouseOver: true,
-                        autoExpandColumn: 'filename',
-                        enableColumnMove: false,
-                        enableColLock: false,
-                        enableColumnHide: false,
-                        loadMask: true,
-                        monitorWindowResize: true,
-                        enableDragDrop: true,
-                        ddGroup:'fileDD'
-                });
-
-            // grid listeners
-
-            // Row Click
-            // when a grid row is clicked, change the highlight on the currently selected folder
-            //  this is similar to windows explorer behavior
-            this.filegrid.on("rowclick",function() {
-                this.treepanel.getSelectionModel().getSelectedNode().getUI().removeClass("x-tree-selected");
-                this.treepanel.getSelectionModel().getSelectedNode().getUI().addClass("x-tree-grayselected");
-            }, this,true);
-
-            // Row Double Click
-            this.filegrid.on("rowdblclick",this.itemDblClick,this,true);
-
-            // Row Right Click
-            this.filegrid.on("rowcontextmenu",this.showContext,this,true);
-
-            // Sort Rows via Drag & Drop
-            var thegrid = this.filegrid;
-            var ajaxfsobj = this;
-            var ddrow = new Ext.dd.DropTarget(thegrid.container, {
-                ddGroup : 'fileDD',
-                copy:false,
-                notifyDrop : function(dd, e, data){
-                    var ds=thegrid.getDataSource();
-                    var sm=thegrid.getSelectionModel();
-                    var rows=sm.getSelections();
-                    if(dd.getDragData(e)) {
-                        var cindex=dd.getDragData(e).rowIndex;
-                        if(typeof(cindex) != "undefined") {
-                            if (!this.copy){
-                                for(i = 0; i < rows.length; i++) {
-                                    ds.remove(ds.getById(rows[i].id));
-                                }
-                            }
-                            ds.insert(cindex,data.selections);
-                            sm.clearSelections();
-                        }
-    
-                        // ** CSM SPECIFIC **
-                        // send an xmlhttp request to update the order_n of fs_objects
-                        /*
-                        var params = "";
-                        var dm = thegrid.getDataSource();
-                        for(var i = 0;i<dm.getCount(); i++) {
-                            var el_id = dm.getAt(i);
-                            params = params + "&object_ids="+el_id.get('id');
-                        }
-            
-                        var callback = function(option,success,response) {
-                            if(!success) {
-                                // fail
-                                // TODO :return a warning message here
-                            }
-                        }
-                
-                        ajaxfsobj.asyncCon.request({url:ajaxfsobj.xmlhttpurl+"sort-files",
-                            params: params,
-                            method:"POST",
-                            callback: callback,
-                            scope: ajaxfsobj
-                        });
-                        */
-                    }
-                }
-            });
-
-            // render and put grid into the center panel
-            this.filegrid.render();
-            this.createGridPanel(this.filegrid,'center',{title:acs_lang_text.file_list || 'File List',closable:false});
+            this.createFileGrid();
         }
 
+        // fetch the folder contents
+
         this.filegrid.getDataSource().baseParams['folder_id'] = node.id;
+        this.filegrid.getDataSource().baseParams['tag_id'] = '';
 
         // if the tree node is still loading, wait for it to expand before loading the grid
         if(node.loading) {
@@ -1110,23 +1240,25 @@ function ajaxfs(configObj) {
 
                 // ********** TOOLBAR *****************
 
+
                 // if the current user has write, then we create the toolbar that allows
                 //  uploading files, creating new folders and deleting
                 if (rootfolderobj.attributes["write_p"] == "t") {
                     // setup the toolbar on the header
                     this.toolbar = new Ext.Toolbar ("headerpanel");
-                    this.toolbar.addButton({text: acs_lang_text.newfolder || 'New Folder', icon: '/resources/ajax-filestorage-ui/icons/folder_add.png', cls : 'x-btn-text-icon', handler: this.newFolder.createDelegate(this), scope: this})
-                    this.toolbar.addButton({text: acs_lang_text.uploadfile || 'Upload Files', icon: '/resources/ajax-filestorage-ui/icons/add.png', cls : 'x-btn-text-icon', handler: this.showUplddialog.createDelegate(this), scope: this})
-                    this.toolbar.addButton({text: acs_lang_text.createurl || 'Create Url', icon: '/resources/ajax-filestorage-ui/icons/page_link.png', cls : 'x-btn-text-icon', handler: this.showCreateUrldialog.createDelegate(this), scope: this})
-                    this.toolbar.addButton({text: acs_lang_text.deletefs || 'Delete', icon: '/resources/ajax-filestorage-ui/icons/delete.png', cls : 'x-btn-text-icon', handler: this.confirmDel.createDelegate(this), scope: this})
-                } else {
-                    // hide the toolbar
-                    this.layout.getRegion("north").hide();
+                    this.toolbar.addButton({text: acs_lang_text.newfolder || 'New Folder', icon: '/resources/ajax-filestorage-ui/icons/folder_add.png', cls : 'x-btn-text-icon', handler: this.newFolder.createDelegate(this), scope: this});
+                    this.toolbar.addButton({text: acs_lang_text.uploadfile || 'Upload Files', icon: '/resources/ajax-filestorage-ui/icons/add.png', cls : 'x-btn-text-icon', handler: this.showUplddialog.createDelegate(this), scope: this});
+                    if (create_url_p) {
+                        this.toolbar.addButton({text: acs_lang_text.createurl || 'Create Url', icon: '/resources/ajax-filestorage-ui/icons/page_link.png', cls : 'x-btn-text-icon', handler: this.showCreateUrldialog.createDelegate(this), scope: this});
+                    }
+                    this.toolbar.addButton({text: acs_lang_text.deletefs || 'Delete', icon: '/resources/ajax-filestorage-ui/icons/delete.png', cls : 'x-btn-text-icon', handler: this.confirmDel.createDelegate(this), scope: this});
                 }
+                this.toolbar.addButton({text: acs_lang_text.download_archive || 'Download Archive', icon: '/resources/ajax-filestorage-ui/icons/arrow_down.png', cls : 'x-btn-text-icon', handler: function(){top.location.href="download-archive/index?object_id="+rootfolderobj.id}.createDelegate(this),scrope:this});
         
                 // render the tree
                 this.treepanel.setRootNode(this.rootfolder);
                 this.treepanel.render();
+
 
                 // ********** OPEN INITIAL FOLDER *****************
 
@@ -1427,12 +1559,42 @@ function ajaxfs(configObj) {
                 }
             });
 
+        this.innerlayout = new Ext.BorderLayout("leftpanel", {
+                center: {
+                    split:true,
+                    titlebar: false,
+                    autoScroll: true
+                }, south: {
+                    split:true,
+                    titlebar: true,
+                    title:"Tags",
+                    autoScroll: true,
+                    initialSize: 130
+                }
+            });
+
         // create the panels in the regions
         this.layout.beginUpdate();
         // header panel
         this.layout.add('north', new Ext.ContentPanel('headerpanel', {autoCreate:true}));
         // folder (tree) panel
-        this.layout.add('west', new Ext.ContentPanel('folderpanel', {autoCreate:true,autoScroll:true,fitToFrame:true,fitContainer:true}));
+        // this.layout.add('west', new Ext.ContentPanel('folderpanel', {autoCreate:true,autoScroll:true,fitToFrame:true,fitContainer:true}));
+        this.layout.add('west', new Ext.NestedLayoutPanel(this.innerlayout));
+        this.innerlayout.add('center', new Ext.ContentPanel('folderpanel', {autoCreate:true,autoScroll:true,fitToFrame:true,fitContainer:true}));
+
+        // tags
+        this.tagcloudpanel = new Ext.ContentPanel('tagpanel', {autoCreate:true,autoScroll:true,fitToFrame:true,fitContainer:true});
+        this.innerlayout.add('south', this.tagcloudpanel);
+        this.tagcloudpanel.load("/ajaxfs2/xmlhttp/tagcloud?package_id="+this.config.package_id);
+        this.tagcloudpanel.getEl().on("click", function(obj,el) { 
+            if(el.tagName == "A") {
+                if (this.currenttag != null) { Ext.get(this.currenttag).setStyle('font-weight','normal') }
+                Ext.get(el).setStyle('font-weight','bold');
+                this.currenttag = el.id;
+                this.loadTagObjects(el.id);
+            }
+        },this);
+
         this.layout.endUpdate();
 
         var dialogConfig = {

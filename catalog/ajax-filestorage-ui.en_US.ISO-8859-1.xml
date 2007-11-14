@@ -16,6 +16,7 @@
   <msg key="CreateUrlFailed">Create URL failed, please try again later.</msg>
   <msg key="DeleteItemError">Sorry, there was an error trying to delete this item.</msg>
   <msg key="Description">Description</msg>
+  <msg key="DownloadArchive">Download Archive</msg>
   <msg key="DuplicateName">Duplicate Name</msg>
   <msg key="EnterDifferentName">Please enter a different name. The name you entered is already being used.</msg>
   <msg key="Error">Error</msg>
