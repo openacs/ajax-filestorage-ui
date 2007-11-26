@@ -1,27 +1,24 @@
-    <link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext/resources/css/ext-all.css">
+    <link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext2/resources/css/ext-all.css">
     <if @theme@ not nil>
-        <link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext/resources/css/ytheme-@theme@.css">
+        <link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext2/resources/css/xtheme-@theme@.css">
     </if>
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.3.1/build/autocomplete/assets/skins/sam/autocomplete.css" />
     <link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/ajaxfs.css">
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.3.0/build/utilities/utilities.js"></script> 
-    <script type="text/javascript" src="/resources/ajaxhelper/ext/adapter/yui/ext-yui-adapter.js"></script>
-    <script type="text/javascript" src="/resources/ajaxhelper/ext/ext-all.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.3.1/build/utilities/utilities.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.3.1/build/autocomplete/autocomplete-min.js"></script>
+    <script type="text/javascript" src="/resources/ajaxhelper/ext2/adapter/yui/ext-yui-adapter.js"></script>
+    <script type="text/javascript" src="/resources/ajaxhelper/ext2/ext-all-debug.js"></script>
     <script type="text/javascript" src="/resources/ajax-filestorage-ui/swfupload/swfupload.js"></script>
     <if @debug@ eq 1>
         <script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs.js"></script>
     </if>
     <else>
-        <if @compressjs@ eq 1>
-            <script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs.js.gz"></script>
-        </if>
-        <else>
-            <script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs-min.js"></script>
-        </else>
+        <script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs-min.js"></script>
     </else>
     <if @options@ defined>
     <script type="text/javascript">
-    // enable or disable create_url
-    var create_url_p = @create_url_p@;
+    // autocomplete
+    var oAutoCompArr = [@suggestions_stub;noquote@];
     // acs-lang
     var acs_lang_text = {
             newfolder:"#file-storage.Create_a_new_folder#",
@@ -83,11 +80,9 @@
             download_archive: "#ajax-filestorage-ui.DownloadArchive#"
     }
     Ext.onReady(function() { 
-        Ext.get("fscontainer").setHeight(400,false);
-        Ext.get("fscontainer").update(" ");
+        Ext.get("@layoutdiv;noquote@").setHeight(400,false);
+        Ext.get("@layoutdiv;noquote@").update(" ");
     });
     var fsInstance = new ajaxfs({@options;noquote@});
     </script>
     </if>
-
-<div id="leftpanel"></div>

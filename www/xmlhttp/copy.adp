@@ -1,1 +1,0 @@
-showstatus("@message;noquote@","@error@");

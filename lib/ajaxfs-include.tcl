@@ -11,46 +11,85 @@
 # - gray
 # - vista
 
-if { [exists_and_not_null theme] } {
+if { ![exists_and_not_null theme] } {
     set theme "gray"
 }
 
-set compressjs [parameter::get -package_id [ajaxfs::get_package_id] -parameter "compressjs" -default 0]
 set debug [parameter::get -package_id [ajaxfs::get_package_id] -parameter "debug" -default 1]
-
-set user_id [ad_conn user_id]
 set create_url_p [parameter::get -package_id $package_id -parameter "EnableCreateUrl" -default 1]
+set multi_file_upload_p [parameter::get -package_id $package_id -parameter "EnableMultiUpload" -default 1]
+set max_file_size [parameter::get -package_id $package_id -parameter "MaximumFileSize" -default 2000000]
+set user_id [ad_conn user_id]
 
-if { [exists_and_not_null root_folder_id] } {
-    if {  ![db_0or1row "get_folder_name" "select name as instance_name from fs_folders where folder_id = :root_folder_id"] } {
-        ad_return_complaint 1 "Root folder does not exist."
-        ad_script_abort
+# ** autosuggest ***
+set tree_id [parameter::get -package_id [ajaxfs::get_package_id] -parameter "CategoryTreeId"]
+if { [exists_and_not_null tree_id] } {
+    set locale [ad_conn locale]
+    set sql_query "select t.name, t.name
+    from categories c, category_translations t
+    where c.category_id = t.category_id
+    and c.tree_id = $tree_id
+    and t.locale = 'en_US'
+    order by lower(t.name)
+    "
+    set suggestion_list [db_list_of_lists get_array_list $sql_query]
+    set suggestion_formatted_list {}
+    foreach suggestion $suggestion_list {
+        lappend suggestion_formatted_list "\[\"[lindex $suggestion 0]\",\"[lindex $suggestion 1]\"\]"
     }
-    set package_id [ajaxfs::get_root_folder -folder_id $root_folder_id]
+    append suggestions_stub [join $suggestion_formatted_list ","]
+} else {
+    set suggetsions_stub ""
 }
+# ********************
 
 if { [exists_and_not_null package_id] } {
-    append options "package_id:$package_id"
-    append options ",package_url:\"[apm_package_url_from_id $package_id]\""
-    if { [exists_and_not_null root_folder_id] } {
-        append options ",rootfolder:$root_folder_id"
+
+    set options [list]
+
+    # get the root folder
+    set rootfolder_id [fs_get_root_folder -package_id $package_id]
+    set instance_name [db_string "get_folder_name" "select name as instance_name from fs_folders where folder_id = :rootfolder_id"]
+    set roottext [db_string "get_folder_name" "select name from fs_folders where folder_id = :rootfolder_id"]
+
+    set write_p [permission::permission_p -no_cache \
+            -party_id [ad_conn user_id] \
+            -object_id ${rootfolder_id} \
+            -privilege "write"]
+    if { $write_p } { set rootwrite_p "t" } else { set rootwrite_p "f" }
+
+    lappend options "treerootnode:{text:\"$roottext\", id:\"$rootfolder_id\",\"attributes\":{\"write_p\":\"$rootwrite_p\"}}"
+
+    lappend options "package_id:$package_id"
+    lappend options "package_url:\"[apm_package_url_from_id $package_id]\""
+    lappend options "xmlhttpurl:\"[ajaxfs::get_url]\xmlhttp/\""
+
+    lappend options "rootfolder:$rootfolder_id"
+    lappend options "rootfoldername:\"$instance_name\""
+
+    if { [exists_and_not_null folder_id] && $folder_id != $rootfolder_id } {
+        lappend options "initOpenFolder:$folder_id"
+        lappend options "pathToFolder: new Array([ajaxfs::generate_path -folder_id $folder_id])"
     }
-    if { [exists_and_not_null folder_id] } {
-        append options ",initOpenFolder:$folder_id"
-        append options ",pathToFolder: new Array([ajaxfs::generate_path -folder_id $folder_id])"
-    }
+
     if { [exists_and_not_null public] } {
-        append options ",ispublic:$public"
+        lappend options "ispublic:$public"
     }
+
     if { [exists_and_not_null layoutdiv] } {
-        append options ",layoutdiv:\"$layoutdiv\""
-    } else {
-        set layoutdiv "fscontainer"
+        lappend options "layoutdiv:\"$layoutdiv\""
     }
-    set max_file_size [parameter::get -package_id $package_id -parameter "MaximumFileSize"]
-    append options ",max_file_size:\"$max_file_size\""
-    append options ",user_id:\"$user_id\""
+
+    lappend options "max_file_size:\"$max_file_size\""
+    lappend options "create_url:$create_url_p"
+    lappend options "multi_file_upload:$multi_file_upload_p"
+    lappend options "user_id:\"$user_id\""
+
+    set options [join $options ","]
+
 } else {
+
     ad_return_complaint 1 "Package id is required."
     ad_script_abort
+
 }

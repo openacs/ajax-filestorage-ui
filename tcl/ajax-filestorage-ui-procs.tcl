@@ -90,7 +90,7 @@ ad_proc -private ajaxfs::generate_path {
     -folder_id:required
 } {
 
-    Generates a comma separated list of folder_id's that start from the root folder to the give folder_id
+    Generates a comma separated list of folder_id's that start from the root folder to the given folder_id
 
     @author Hamilton Chua (ham@solutiongrove.com)   
     @creation-date 2007-07-07
