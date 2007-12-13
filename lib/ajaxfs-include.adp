@@ -7,7 +7,7 @@
     <script type="text/javascript" src="http://yui.yahooapis.com/2.3.1/build/utilities/utilities.js"></script>
     <script type="text/javascript" src="http://yui.yahooapis.com/2.3.1/build/autocomplete/autocomplete-min.js"></script>
     <script type="text/javascript" src="/resources/ajaxhelper/ext2/adapter/yui/ext-yui-adapter.js"></script>
-    <script type="text/javascript" src="/resources/ajaxhelper/ext2/ext-all-debug.js"></script>
+    <script type="text/javascript" src="/resources/ajaxhelper/ext2/ext-all.js"></script>
     <script type="text/javascript" src="/resources/ajax-filestorage-ui/swfupload/swfupload.js"></script>
     <if @debug@ eq 1>
         <script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs.js"></script>
