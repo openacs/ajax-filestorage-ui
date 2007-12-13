@@ -28,16 +28,7 @@ if { ![exists_and_not_null user_id] } {
   set user_id [ad_conn user_id]
 }
 
-# set subsite_p [myweb::subsite_p -ancestor_subsite_id $ancestor_subsite_id]
-# set application_group_id [application_group::group_id_from_package_id -package_id $ancestor_subsite_id]
-# set limit_clause {
-# and m.object_id in (select p.object_id
-#            from acs_permissions_all p, fs_objects e
-#            where p.object_id = e.object_id
-#            and p.grantee_id = :application_group_id
-#            and p.privilege = 'read')
-#}
-# set limit_clause "and m.object_id in (select object_id from acs_objects where package_id = $package_id)"
+set limit_clause "and m.object_id in (select object_id from acs_objects where package_id = $package_id)"
 
 db_multirow -extend { url } connections connections [subst {
 select c.category_id, t.name, count(*) as count, o.creation_user
@@ -47,6 +38,7 @@ and c.tree_id = :tree_id
 and t.locale = :locale
 and c.category_id = m.category_id
 and c.category_id = o.object_id
+$limit_clause
 group by t.name, o.creation_date, o.creation_user, c.category_id
 order by t.name}] { 
     set url "javascript:void(0)"

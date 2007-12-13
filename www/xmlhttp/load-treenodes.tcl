@@ -23,9 +23,7 @@ if { ![exists_and_not_null node] } {
     set node [fs::get_root_folder -package_id $package_id]
 }
 
-db_multirow -extend { text id  href cls leaf } "treenodes" "treenodes" { } {
-
-    set child_count [db_string "count_children" "select count(*) from fs_objects where parent_id = :object_id and type='folder'"]
+db_multirow -extend { text id  href cls qtip symlink_id } "treenodes" "treenodes" { } {
 
     if { [exists_and_not_null title] } {
         set text $title
@@ -33,12 +31,41 @@ db_multirow -extend { text id  href cls leaf } "treenodes" "treenodes" { } {
         set text $name
     }
 
+    set symlink_id ""
     set id "$object_id"
     set cls "folder"
-    set leaf "true"
 
-    if { $child_count > 0 } {
-        set leaf "false"
+    if { $type == "symlink" } {
+        set cls "symlink"
+        set target_id [db_string get_target_folder "select target_id from cr_symlinks where symlink_id=:object_id"]
+        set symlink_id $id
+        set id $target_id
+        set target_package_id [ajaxfs::get_root_folder -folder_id $target_id]
+        set instance_name [db_string get_subsite_name "select instance_name from apm_packages where package_id=(select context_id from acs_objects where object_id = ${target_package_id})"]
+        set qtip "${text} <b>shared from</b> ${instance_name}"
+    } else {
+        set shared_with [db_list get_share_from "select p.instance_name 
+                from cr_folders f, 
+                     cr_symlinks s, 
+                     cr_items i, 
+                     acs_objects o, 
+                     apm_packages p, 
+                     site_nodes s1, 
+                     site_nodes s2 
+                where o.package_id = s2.object_id 
+                and s1.node_id = s2.parent_id 
+                and s1.object_id = p.package_id 
+                and s.symlink_id = o.object_id 
+                and s.symlink_id = i.item_id
+                and s.target_id = :object_id 
+                and f.folder_id=i.parent_id"]
+        if { [llength $shared_with] > 0} {
+            set cls "sharedfolder"
+            set qtip "<div style='text-align:left'>${text} is <b>shared with</b><ul> <li>[join ${shared_with} "</li><li>"]</li></ul></div>"
+        } else {
+            set cls "folder"
+            set qtip $text
+        }
     }
 
 }

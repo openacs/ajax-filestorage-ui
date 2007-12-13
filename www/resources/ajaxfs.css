@@ -1,6 +1,15 @@
 .x-tree-node img.folder, .x-tree-node-collapsed img.folder {
     background-image:url(/resources/ajaxhelper/ext/resources/images/default/tree/folder.gif);
 }
+.x-tree-node-expanded img.folder {
+    background: url(/resources/ajaxhelper/ext/resources/images/default/tree/folder-open.gif)
+}
+.x-tree-node img.sharedfolder, x-tree-node-collapsed img.sharedfolder {
+    background: url(/resources/ajaxhelper/icons/folder_go.png)
+}
+.x-tree-node img.symlink, x-tree-node-collapsed img.symlink {
+    background: url(/resources/ajaxhelper/icons/folder_link.png)
+}
 div.flash {
     width: 80%;
     margin: 10px 0px 10px 0px;
@@ -65,3 +74,7 @@ a.progressCancel:hover {
     position:absolute;
     width:80%;
 }
+
+.x-combo-list-inner { text-align: left }
+.x-menu-list-item { text-align: left; font-weight:normal }
+.toolsmenu {background-image:url(/resources/ajaxhelper/icons/wrench_orange.png) !important;}

@@ -1,1 +1,1 @@
-[<multiple name="treenodes" delimiter=",">{"text":"@treenodes.name@","id":"@treenodes.id;noquote@","iconCls":"folder","singleClickExpand":true,"attributes":{"write_p":"@treenodes.write_p@"}}</multiple>]
+[<multiple name="treenodes" delimiter=",">{"text":"@treenodes.name@","qtip":"@treenodes.qtip;noquote@","id":"@treenodes.id;noquote@","iconCls":"@treenodes.cls;noquote@","singleClickExpand":true,"attributes":{"write_p":"@treenodes.write_p@","type":"@treenodes.type;noquote@","symlink_id":"@treenodes.symlink_id@"}}</multiple>]

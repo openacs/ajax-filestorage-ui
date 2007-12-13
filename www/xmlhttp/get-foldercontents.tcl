@@ -10,6 +10,7 @@ ad_page_contract {
     folder_id:optional
     tag_id:integer,optional
     {sort "fs_objects.title"}
+    {package_id:optional}
     {dir "DESC"}
 }
 
@@ -23,6 +24,7 @@ regsub "treenode" $folder_id "" folder_id
 #  so that we can get a path to prefix to the files
 
 set root_package_id [ajaxfs::get_root_folder -folder_id $folder_id]
+if {[info exists package_id]} { set root_package_id $package_id }
 set root_folder_id [fs::get_root_folder -package_id $root_package_id]
 
 set folder_name [lang::util::localize [fs::get_object_name -object_id  $folder_id]]
@@ -86,7 +88,9 @@ if { [exists_and_not_null tag_id] } {
 }
 
 
-db_multirow -extend { filename icon last_modified_pretty content_size_pretty download_url object_counter file_list_start file_list_end write_p tags} contents $query_name $query  {
+db_multirow -extend { filename icon last_modified_pretty content_size_pretty download_url linkurl object_counter file_list_start file_list_end write_p tags symlink_id} contents $query_name $query  {
+
+    set symlink_id ""
 
     # title of the file
 
@@ -117,7 +121,39 @@ db_multirow -extend { filename icon last_modified_pretty content_size_pretty dow
 
     switch -- $type {
         folder {
-            set icon "<img src='/resources/ajaxhelper/icons/folder.png'>"
+            set shared_with [db_list get_share_from "select p.instance_name 
+                    from cr_folders f, 
+                        cr_symlinks s, 
+                        cr_items i, 
+                        acs_objects o, 
+                        apm_packages p, 
+                        site_nodes s1, 
+                        site_nodes s2 
+                    where o.package_id = s2.object_id 
+                    and s1.node_id = s2.parent_id 
+                    and s1.object_id = p.package_id 
+                    and s.symlink_id = o.object_id 
+                    and s.symlink_id = i.item_id
+                    and s.target_id = :object_id 
+                    and f.folder_id=i.parent_id"]
+            if { [llength $shared_with] > 0} {
+                set shareditems [join ${shared_with} "</li><li>"]
+                set qtip "<div style=text-align:left>${title} is <b>shared with</b><ul><li>${shareditems}</li></ul></div>"
+                set icon "<img src='/resources/ajaxhelper/icons/folder_go.png' ext:qtip='${qtip}' ext:width='100'>"
+            } else {
+                set qtip "${title}"
+                set icon "<img src='/resources/ajaxhelper/icons/folder.png' ext:qtip='${qtip}' ext:width='200'>"
+            }
+        }
+        symlink {
+            set target_id [db_string get_target_folder "select target_id from cr_symlinks where symlink_id=:object_id"]
+            set symlink_id $object_id
+            set object_id $target_id
+            set target_package_id [ajaxfs::get_root_folder -folder_id $target_id]
+            set instance_name [db_string get_subsite_name "select instance_name from apm_packages where package_id=(select context_id from acs_objects where object_id = ${target_package_id})"]
+            set qtip "<div style=text-align:left>${title} <b>shared from</b> ${instance_name}</div>"
+            set icon "<img src='/resources/ajaxhelper/icons/folder_link.png' ext:qtip='$qtip' ext:width='200'>"
+            set content_size_pretty ""
         }
         url {
             set icon "<img src='/resources/ajaxhelper/icons/link.png'>"
@@ -153,22 +189,26 @@ db_multirow -extend { filename icon last_modified_pretty content_size_pretty dow
         }
     }
 
+    # cleanup :
+    # remove double quotes, replace with single quotes
+    regsub  -all "\"" $title "" title
+
     # filename and download url
 
-    set filename " "
-
-    if { $type != "folder"} {
+    if { $type != "folder" && $type != "symlink"} {
 
         if { ![exists_and_not_null download_url] } {
             set download_url "${fs_url}download/${name}?[export_vars {{file_id $object_id}}]"
+            set linkurl "${fs_url}download/?[export_vars {{file_id $object_id}}]"
         }
 
         set filename $name
-
+        if { $title == $name } { set filename " "}
     } else {
 
         set download_url "javascript:void(0)"
-
+        set linkurl "javascript:void(0)"
+        set filename " "
     }
 
     # get the tags for this fs item

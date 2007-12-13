@@ -17,6 +17,7 @@ if { ![exists_and_not_null theme] } {
 
 set debug [parameter::get -package_id [ajaxfs::get_package_id] -parameter "debug" -default 1]
 set create_url_p [parameter::get -package_id $package_id -parameter "EnableCreateUrl" -default 1]
+set share_folders_p [parameter::get -package_id $package_id -parameter "EnableFolderShare" -default 0]
 set multi_file_upload_p [parameter::get -package_id $package_id -parameter "EnableMultiUpload" -default 1]
 set max_file_size [parameter::get -package_id $package_id -parameter "MaximumFileSize" -default 2000000]
 set user_id [ad_conn user_id]
@@ -82,6 +83,7 @@ if { [exists_and_not_null package_id] } {
 
     lappend options "max_file_size:\"$max_file_size\""
     lappend options "create_url:$create_url_p"
+    lappend options "share_folders:$share_folders_p"
     lappend options "multi_file_upload:$multi_file_upload_p"
     lappend options "user_id:\"$user_id\""
 

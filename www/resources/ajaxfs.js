@@ -16,7 +16,7 @@ ajaxfs = function(configObj) {
 
     //  ** configObj **
     // ajaxFs expects a config object that may have the following properites
-    // - configObj.package_ids : the package_id or a comma separated list of package_ids of the current ajaxFs Instance
+    // - configObj.package_id : the package_id of the current ajaxFs Instance
     // - configObj.initOpenFolder : if this value is not null, it should contain the folder id to open when object is instantiated
     // - configObj.layoutdiv : the div container where we put the layout, if none is provided then document.body is used
     // - configObj.xmlhttpurl : just in case ajaxfs is mounted elsewhere other than /ajaxfs
@@ -29,6 +29,9 @@ ajaxfs = function(configObj) {
 
     // do we or do we not allow creating url's in fs, defaults to true
     this.create_url_p = true;
+
+    // do we support folder sharing
+    this.share_folders_p = true;
 
     // holds an object with configruation settings for this instance
     //  of ajaxfs, this variable is set only if configObj exists and is passed
@@ -61,12 +64,21 @@ ajaxfs = function(configObj) {
     // create ur dialog
     this.createurlWindow = null;
 
+    // share folder window
+    this.sharefolderWindow = null;
+
     // reference to contextmenu
     this.contextmenu = null;
 
     // reference to an instance of the swfuploader
     //  used for ajaxfs
     this.swfu = null;
+
+    // variable to store target folder when it is being shared
+    this.target_folder_id = null;
+
+    // variable to store combo
+    this.communityCombo = null;
 
 
     //********* initialize *********
@@ -84,6 +96,7 @@ ajaxfs = function(configObj) {
                 this.config = configObj;
                 if(this.config.xmlhttpurl) { this.xmlhttpurl = this.config.xmlhttpurl }
                 if(this.config.create_url && this.config.create_url == 0) { this.create_url_p = false }
+                if(this.config.share_folders && this.config.share_folders == 0) { this.share_folders_p = false }
 
                 // generic listener to check if 
                 // the connection has returned a login form
@@ -198,6 +211,143 @@ ajaxfs.prototype = {
 
     },
 
+    // create a tools menu that has the same items as the context menu
+    createToolsMenu : function() {
+
+        var menu = new Ext.menu.Menu({
+            id: 'toolsmenu',
+            items: [
+            new Ext.menu.Item({
+                id:'mnOpen',
+                text: 'Open',
+                icon: '/resources/ajaxhelper/icons/page_white.png'
+            }),
+            new Ext.menu.Item({
+                id:'mnTag',
+                text: 'Tag',
+                icon: '/resources/ajaxhelper/icons/tag_blue.png'
+            }),
+            new Ext.menu.Item({
+                id:'mnView',
+                text: 'Views',
+                icon: '/resources/ajaxhelper/icons/camera.png'
+            }),
+            new Ext.menu.Item({
+                id:'mnRename',
+                text: acs_lang_text.rename || 'Rename',
+                icon: '/resources/ajaxhelper/icons/page_edit.png'
+            }),
+            new Ext.menu.Item({
+                id:'mnCopyLink',
+                text: acs_lang_text.linkaddress || 'Copy Link Address',
+                icon: '/resources/ajaxhelper/icons/page_copy.png'
+            }), 
+            new Ext.menu.Item({
+                id:'mnPerms',
+                text: acs_lang_text.permissions || 'Permissions',
+                icon: '/resources/ajaxhelper/icons/group_key.png'
+            }), 
+            new Ext.menu.Item({
+                id:'mnProp',
+                text: acs_lang_text.properties || 'Properties',
+                icon: '/resources/ajaxhelper/icons/page_edit.png'
+            }), 
+            new Ext.menu.Item({
+                id:'mnArch',
+                text: acs_lang_text.download_archive || 'Download archive',
+                icon: '/resources/ajaxhelper/icons/arrow_down.png'
+            }),
+            new Ext.menu.Item({
+                id:'mnShare',
+                text: acs_lang_text.sharefolder || 'Share Folder',
+                icon: '/resources/ajaxhelper/icons/group_link.png'
+            }) ]
+        });
+
+        menu.on("beforeshow",function() {
+
+            var gridpanel = this.layout.findById('filepanel');
+
+            if (gridpanel.getSelectionModel().getCount() == 1) {
+                var selectedRow = gridpanel.getSelectionModel().getSelections();
+                for(var x=0; x<menu.items.items.length;x++) {
+                    menu.items.items[x].enable();
+                }
+                switch (selectedRow[0].get("type"))  {
+                    case "folder":
+                        menu.items.items[0].setText("Open");
+                        menu.items.items[1].disable();
+                        menu.items.items[6].disable();
+                        break;
+                    case "symlink":
+                        menu.items.items[0].setText("Open");
+                        menu.items.items[1].disable();
+                        menu.items.items[3].disable();
+                        menu.items.items[6].disable();
+                        break
+                    default :
+                        menu.items.items[0].setText("Download");
+                        menu.items.items[7].disable();
+                        menu.items.items[8].disable();
+                        break;
+                }
+                // always disable if shared folders are not supported
+                if(!this.share_folders_p) {
+                    menu.items.items[8].disable();
+                }
+            } else {
+                for(var x=0; x<menu.items.items.length;x++) {
+                    menu.items.items[x].disable();
+                }
+            }
+        },this);
+
+        menu.on("itemclick",function(item,e) {
+            var grid = this.layout.findById('filepanel');
+            var selectedRow = grid.getSelectionModel().getSelected();
+            var recordid = selectedRow.get("id");
+            for (var x=0; x<grid.store.data.items.length; x++) {
+                if (grid.store.data.items[x].id == recordid) { var i = x; break }
+            }
+            switch (item.getId())  {
+                case "mnOpen":
+                    this.openItem(grid, i);
+                    break;
+                case "mnTag":
+                    this.tagFsitem(grid, i);
+                    break;
+                case "mnView":
+                    this.redirectViews(grid, i);
+                    break;
+                case "mnRename":
+                    this.renameItem(grid,i);
+                    break;
+                case "mnCopyLink":
+                    this.copyLink(grid,i);
+                    break;
+                case "mnPerms":
+                    this.redirectPerms(grid, i);
+                    break;
+                case "mnProp":
+                    this.redirectProperties(grid, i);
+                    break;
+                case "mnArch":
+                    this.downloadArchive(recordid);
+                    break;
+                case "mnShare":
+                    this.showShareOptions(grid, i);
+                    break;
+            }
+        },this);
+
+        var tbutton = {
+            text:'Tools',
+            iconCls:'toolsmenu',
+            menu: menu
+        }
+        return tbutton;
+    },
+
     // create the toolbar for this instance of ajaxfs
 
     createToolbar : function() {
@@ -213,13 +363,14 @@ ajaxfs.prototype = {
                 toolbar.push({text: acs_lang_text.createurl || 'Create Url',tooltip: acs_lang_text.createurl || 'Create Url', icon: '/resources/ajaxhelper/icons/page_link.png', cls : 'x-btn-text-icon', handler: this.addUrl.createDelegate(this)});
             }
             toolbar.push({text: acs_lang_text.deletefs || 'Delete', tooltip: acs_lang_text.deletefs || 'Delete', icon: '/resources/ajaxhelper/icons/delete.png', cls : 'x-btn-text-icon', handler: this.delItem.createDelegate(this)});
+            toolbar.push(this.createToolsMenu());
             toolbar.push('->');
         }
         toolbar.push({tooltip: 'This may take a few minutes if you have a lot of files', text: acs_lang_text.download_archive || 'Download Archive', icon: '/resources/ajaxhelper/icons/arrow_down.png', cls : 'x-btn-text-icon', handler: this.downloadArchive.createDelegate(this,[rootnode.id],false)});
         return toolbar;
     },
 
-    // creates the left panel as an accordon, top panel has the folders, bottom panel has the tags
+    // creates the left panel as an accordion, top panel has the folders, bottom panel has the tags
 
     createLeft : function() {
         var panel = new Ext.Panel ({
@@ -444,6 +595,7 @@ ajaxfs.prototype = {
             title:'Tags',
             frame:false,
             loadMask:true,
+            autoScroll:true,
             autoLoad:{url:this.xmlhttpurl+'get-tagcloud',params:{package_id:this.config.package_id}}
         });
 
@@ -468,7 +620,7 @@ ajaxfs.prototype = {
         return  panel;
     },
 
-    // loads the objects associted with a tag
+    // loads the objects associated with a tag
     loadTaggedFiles : function (tagid) {
 
         this.layout.findById("treepanel").getSelectionModel().clearSelections();
@@ -498,7 +650,9 @@ ajaxfs.prototype = {
                     {name:'type'},
                     {name:'tags'},
                     {name:'url'},
+                    {name:'linkurl'},
                     {name:'write_p'},
+                    {name:'symlink_id'},
                     {name:'size'},
                     {name:'lastmodified'}] );
 
@@ -556,6 +710,7 @@ ajaxfs.prototype = {
 
         e.stopEvent();
 
+        var treepanel = this.layout.findById('treepanel');
         var dm = grid.store;
         var record = dm.getAt(i);
         var object_type = record.get("type");
@@ -615,6 +770,11 @@ ajaxfs.prototype = {
                 text: acs_lang_text.download_archive || 'Download archive',
                 icon: '/resources/ajaxhelper/icons/arrow_down.png',
                 handler: this.downloadArchive.createDelegate(this,[recordid],false)
+            }),
+            new Ext.menu.Item({
+                text: acs_lang_text.sharefolder || 'Share Folder',
+                icon: '/resources/ajaxhelper/icons/group_link.png',
+                handler: this.showShareOptions.createDelegate(this,[grid, i, e],false)
             })  ]
         });
 
@@ -629,6 +789,7 @@ ajaxfs.prototype = {
             this.contextmenu.items.items[6].hide();
             this.contextmenu.items.items[7].hide();
             this.contextmenu.items.items[8].hide();
+            this.contextmenu.items.items[9].hide();
         } else {
             this.contextmenu.items.items[0].show();
             this.contextmenu.items.items[2].show();
@@ -640,11 +801,27 @@ ajaxfs.prototype = {
                 this.contextmenu.items.items[1].hide();
                 this.contextmenu.items.items[7].hide();
                 this.contextmenu.items.items[8].show();
+                if (treepanel.getNodeById(recordid).attributes.attributes.type == "symlink") {
+                    this.contextmenu.items.items[9].hide();
+                } else {
+                    this.contextmenu.items.items[9].show();
+                }
             } else {
-                this.contextmenu.items.items[1].show();
-                this.contextmenu.items.items[7].show();
-                this.contextmenu.items.items[8].hide();
+                if (object_type == "symlink") {
+                    this.contextmenu.items.items[4].hide();
+                    this.contextmenu.items.items[9].hide();
+                } else {
+                    this.contextmenu.items.items[1].show();
+                    this.contextmenu.items.items[7].show();
+                    this.contextmenu.items.items[8].hide();
+                    this.contextmenu.items.items[9].hide();
+                }
             }
+        }
+
+        // always disable if shared folders are not supported
+        if(!this.share_folders_p) {
+            this.contextmenu.items.items[9].hide();
         }
 
         var coords = e.getXY();
@@ -667,6 +844,7 @@ ajaxfs.prototype = {
         // fetch the folder contents
 
         gridpanel.store.baseParams['folder_id'] = node.id;
+        gridpanel.store.baseParams['package_id'] = this.config.package_id;
         // gridpanel.store.baseParams['tag_id'] = '';
 
         // if the tree node is still loading, wait for it to expand before loading the grid
@@ -686,7 +864,7 @@ ajaxfs.prototype = {
         var treepanel = this.layout.findById('treepanel');
         var dm = grid.store;
         var record = dm.getAt(i);
-        if(record.get("type") == "folder") {
+        if(record.get("type") == "folder"|| record.get("type") == "symlink") {
             var node = treepanel.getNodeById(record.get("id"));
             if(!node.parentNode.isExpanded()) { node.parentNode.expand() }
             node.fireEvent("click",node);
@@ -732,7 +910,11 @@ ajaxfs.prototype = {
                     var msg = "";
                 }
                 var msg = msg + err_msg_txt+" <b>"+filetodel+"</b> ?";
-                var object_id = selectedRows[0].get("id");
+                if(selectedRows[0].get("type") === "symlink") {
+                    var object_id = selectedRows[0].get("symlink_id");
+                } else {
+                    var object_id = selectedRows[0].get("id");
+                }
             } else {
                 var msg = err_msg_txt + ": <br><br>";
                 var object_id = [];
@@ -742,7 +924,11 @@ ajaxfs.prototype = {
                         msg=msg+"("+selectedRows[x].get("size")+")";
                     }
                     msg=msg+"<br>";
-                    object_id[x] = selectedRows[x].get("id");
+                    if(selectedRows[x].get("type") === "symlink") {
+                        object_id[x] = selectedRows[x].get("symlink_id");
+                    } else {
+                        object_id[x] = selectedRows[x].get("id");
+                    }
                 }
             }
 
@@ -754,7 +940,14 @@ ajaxfs.prototype = {
             // we can't delete the root node
             var selectednode = treepanel.getSelectionModel().getSelectedNode();
             var object_id = selectednode.attributes["id"];
+            var type = selectednode.attributes.attributes["type"];
+            var symlink_id = selectednode.attributes.attributes["symlink_id"];
             var rootnode = treepanel.getRootNode();
+            if(type == "symlink" ) {
+                var params = {object_id : symlink_id }
+            } else {
+                var params = {object_id : object_id }
+            }
             if(selectednode.attributes["id"] == rootnode.attributes["id"]) {
                 Ext.Msg.alert(acs_lang_text.alert || "Alert",acs_lang_text.cant_del_root || "The root folder can not be deleted.");
                 return;
@@ -795,7 +988,7 @@ ajaxfs.prototype = {
                         }
                     }, failure: function() {
                         Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
-                    }, params: { object_id: object_id }
+                    }, params: params
                 });
             }
         }
@@ -1321,8 +1514,6 @@ ajaxfs.prototype = {
                 buttons: tagBtns
             });
 
-        } else {
-
         }
 
         tagWindow.show();
@@ -1353,6 +1544,115 @@ ajaxfs.prototype = {
         if(object_id) {
             top.location.href="download-archive/?object_id="+object_id;
         }
+    },
+
+    showShareOptions : function(grid,i,e) {
+
+        var filepanel = grid;
+        var node =  filepanel.store.getAt(i);
+        var object_id = node.get("id");
+        var foldertitle = node.get("title");
+        var treepanel = this.layout.findById('treepanel');
+        var package_id = this.config.package_id;
+        var xmlhttpurl = this.xmlhttpurl;
+        var shareWindow = this.sharefolderWindow;
+
+        var sharesuccess = function() {
+            var selectednode = treepanel.getSelectionModel().getSelectedNode();
+            selectednode.loaded = false;
+            selectednode.collapse();
+            selectednode.fireEvent("click",selectednode);
+            selectednode.expand();
+            shareWindow.hide();
+        }
+
+        var sharefolder = function() {
+            var target_folder_id = this.communityCombo.getValue();
+
+            Ext.Ajax.request({
+                url:this.xmlhttpurl+"share-folder",
+                success: sharesuccess,
+                failure: function(response) {
+                    Ext.Msg.alert("Error","Sorry, we encountered an error. Please try again later.");
+                }, params: {target_folder_id:target_folder_id,folder_id:object_id}
+            });
+
+        }
+
+        if(shareWindow == null) {
+
+            var shareFormBody = new Ext.Panel({
+                id:'form_addtag',
+                autoScroll:true,
+                frame:true,
+                html: "<div style='text-align:left'>Select the community where you wish to share the <b>"+foldertitle+"</b> folder with.<br><br><input type='text' size='30' id='communities_list' /></div></div>"
+            });
+    
+            var shareBtns = [{
+                    text: 'Ok',
+                    icon:"/resources/ajaxhelper/icons/disk.png",
+                    cls:"x-btn-text-icon",
+                    handler:sharefolder.createDelegate(this)
+                },{
+                    text: 'Cancel',
+                    icon:"/resources/ajaxhelper/icons/cross.png",
+                    cls:"x-btn-text-icon",
+                    handler: function(){
+                        shareWindow.hide();
+                    }.createDelegate(this)
+            }];
+
+            shareWindow = new Ext.Window({
+                id:'share-win',
+                layout:'fit',
+                width:380,
+                height:200,
+                title:"Share Folder",
+                closeAction:'hide',
+                modal:true,
+                plain:true,
+                autoScroll:false,
+                resizable:false,
+                items: shareFormBody,
+                buttons: shareBtns
+            });
+
+            shareWindow.on("show",function() {
+
+                if(this.communityCombo == null) {
+
+                    var communities = new Ext.data.JsonStore({
+                        url: xmlhttpurl+'list-communities',
+                        root: 'communities',
+                        fields: ['target_folder_id', 'instance_name']
+                    });
+
+                    this.communityCombo = new Ext.form.ComboBox({
+                        store: communities,
+                        displayField:'instance_name',
+                        typeAhead: true,
+                        triggerAction: 'all',
+                        emptyText:'Select a community',
+                        hiddenName:'target_folder_id',
+                        valueField:'target_folder_id',
+                        forceSelection:true,
+                        handleHeight: 80,
+                        selectOnFocus:true,
+                        applyTo:'communities_list'
+                    });
+
+                }
+
+            },this);
+
+        } else {
+
+            this.communityCombo.reset();
+
+        }
+
+        shareWindow.show();
+
     },
 
     // redirect to object views for a file
@@ -1397,7 +1697,7 @@ ajaxfs.prototype = {
         } else if (nodetype === "url") {
             var copytext = node.get("url");
         } else {
-            var copytext = window.location.protocol+"//"+window.location.hostname+node.get("url");
+            var copytext = window.location.protocol+"//"+window.location.hostname+node.get("linkurl");
         }
         if(Ext.isIE) {
             window.clipboardData.setData("text",copytext);
