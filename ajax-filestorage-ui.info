@@ -24,7 +24,7 @@
             <callback type="after-upgrade"  proc="ajaxfs::apm::after_upgrade"/>
         </callbacks>
         <parameters>
-            <parameter datatype="number"  min_n_values="1"  max_n_values="1"  name="debug"  default="0" description="Set this parameter to 1 so that ajaxfs uses ajaxfs-debug.js instead of ajaxfs.js to debug the javascript"/>
+            <parameter datatype="number"  min_n_values="1"  max_n_values="1"  name="debug"  default="0" description="Set this parameter to 1 so that ajaxfs uses ajaxfs.js instead of ajaxfs-min.js, the minified version "/>
             <parameter datatype="number"  min_n_values="1"  max_n_values="1"  name="CategoryTreeId"  default="0" description="The category tree to use for tagging files"/>
         </parameters>
 
