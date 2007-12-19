@@ -95,8 +95,8 @@ ajaxfs = function(configObj) {
 
                 this.config = configObj;
                 if(this.config.xmlhttpurl) { this.xmlhttpurl = this.config.xmlhttpurl }
-                if(this.config.create_url && this.config.create_url == 0) { this.create_url_p = false }
-                if(this.config.share_folders && this.config.share_folders == 0) { this.share_folders_p = false }
+                if(this.config.create_url == 0) { this.create_url_p = false }
+                if(this.config.share_folders == 0) { this.share_folders_p = false }
 
                 // generic listener to check if 
                 // the connection has returned a login form
@@ -497,8 +497,11 @@ ajaxfs.prototype = {
                     Ext.Ajax.request({
                         url:this.xmlhttpurl+"move-fsitem",
                         success: moveSuccess, failure: function() {
+                            var resultObj = Ext.decode(response.responseText);
+                            var msg = "";
+                            if(resultObj.error) { msg = resultObj.error }
                             // ajax failed, revert value
-                            Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+"<br>"+err_msg_txt2);
+                            Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+"<br>"+msg+"<br>"+err_msg_txt2);
                         }, params: { folder_target_id:folder_target_id,file_ids:file_ids }
                     });
 
@@ -711,6 +714,7 @@ ajaxfs.prototype = {
         e.stopEvent();
 
         var treepanel = this.layout.findById('treepanel');
+        var rootnode = this.config.treerootnode;
         var dm = grid.store;
         var record = dm.getAt(i);
         var object_type = record.get("type");
@@ -824,6 +828,14 @@ ajaxfs.prototype = {
             this.contextmenu.items.items[9].hide();
         }
 
+        if(rootnode.attributes["write_p"] == 'f') {
+            this.contextmenu.items.items[1].hide();
+            this.contextmenu.items.items[3].hide();
+            this.contextmenu.items.items[6].hide();
+            this.contextmenu.items.items[7].hide();
+            this.contextmenu.items.items[9].hide();
+        }
+
         var coords = e.getXY();
         this.contextmenu.rowid = i;
         this.contextmenu.showAt([coords[0], coords[1]]);
@@ -931,6 +943,8 @@ ajaxfs.prototype = {
                     }
                 }
             }
+
+            var params = {object_id : object_id }
 
         } else {
 
@@ -1697,7 +1711,7 @@ ajaxfs.prototype = {
         } else if (nodetype === "url") {
             var copytext = node.get("url");
         } else {
-            var copytext = window.location.protocol+"//"+window.location.hostname+node.get("linkurl");
+            var copytext = window.location.protocol+"//"+window.location.hostname+node.get("url");
         }
         if(Ext.isIE) {
             window.clipboardData.setData("text",copytext);

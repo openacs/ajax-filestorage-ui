@@ -22,7 +22,7 @@ if { ![permission::permission_p -no_cache \
         -object_id $parent_id \
         -privilege "write"] } {
 
-    ns_return 500 "text/html" "{\"success\":false,\"error\":\"You do not have permission to rename.\"}"
+    ns_return 500 "text/html" "{\"success\":false,\"error\":\"You do not have permission to move.\"}"
     ad_script_abort
 }
 

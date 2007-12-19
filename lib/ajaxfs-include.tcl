@@ -73,8 +73,8 @@ if { [exists_and_not_null package_id] } {
         lappend options "pathToFolder: new Array([ajaxfs::generate_path -folder_id $folder_id])"
     }
 
-    if { [exists_and_not_null public] } {
-        lappend options "ispublic:$public"
+    if { [exists_and_not_null public] || [permission::permission_p -no_login -no_cache -party_id [db_string "get_public" "select object_id from acs_magic_objects where name ='the_public'"] -object_id $package_id -privilege "read"] } {
+        lappend options "ispublic:true"
     }
 
     if { [exists_and_not_null layoutdiv] } {
