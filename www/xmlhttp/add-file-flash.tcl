@@ -46,7 +46,7 @@ set unpack_p [template::util::is_true $unpack_p]
 
 set unzip_binary [string trim [parameter::get -package_id $package_id -parameter UnzipBinary]]
 
-if { $unpack_p && ![empty_string_p $unzip_binary] && [file extension [template::util::file::get_property filename $Filedata]] eq ".zip"  } {
+if { $unpack_p && ![empty_string_p $unzip_binary] && [file extension $Filedata] eq ".zip"  } {
     
     set path [ns_tmpnam]
     file mkdir $path
