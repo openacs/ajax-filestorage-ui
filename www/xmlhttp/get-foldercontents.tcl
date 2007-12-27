@@ -156,7 +156,8 @@ db_multirow -extend { filename icon last_modified_pretty content_size_pretty dow
             set content_size_pretty ""
         }
         url {
-            set icon "<img src='/resources/ajaxhelper/icons/link.png'>"
+            set qtip [db_string "getdesc" "select description from cr_extlinks where extlink_id=:object_id"]
+            set icon "<img src='/resources/ajaxhelper/icons/link.png' ext:qtip='$qtip'>"
             set download_url $url
             set content_size_pretty ""
         }

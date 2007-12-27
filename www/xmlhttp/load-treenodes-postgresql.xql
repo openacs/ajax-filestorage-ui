@@ -15,6 +15,7 @@
                 fs_objects.name,
                 fs_objects.title,
                 fs_objects.parent_id,
+                fs_objects.content_size,
                 fs_objects.type,
                    case
                      when fs_objects.type = 'url'

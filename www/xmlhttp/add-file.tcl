@@ -8,7 +8,7 @@ ad_page_contract {
     upload_file.tmpfile:tmpfile
     package_id:integer,notnull
     {filetitle:trim ""}
-    filedescription
+    {filedescription ""}
     {unpack_p:boolean "f"}
 } -validate {
     valid_folder -requires {folder_id:integer} {
@@ -103,7 +103,7 @@ db_transaction {
             -creation_user $user_id \
             -creation_ip $creation_ip \
             -title $filetitle \
-            -description "" \
+            -description $filedescription \
             -package_id $package_id \
             -mime_type $mime_type
     

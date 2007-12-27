@@ -284,7 +284,13 @@ ajaxfs.prototype = {
                         menu.items.items[1].disable();
                         menu.items.items[3].disable();
                         menu.items.items[6].disable();
-                        break
+                        break;
+                    case "url" :
+                        menu.items.items[0].setText("Open");
+                        menu.items.items[6].disable();
+                        menu.items.items[7].disable();
+                        menu.items.items[8].disable();
+                        break;
                     default :
                         menu.items.items[0].setText("Download");
                         menu.items.items[7].disable();
@@ -532,7 +538,6 @@ ajaxfs.prototype = {
         this.te = new Ext.tree.TreeEditor(treepanel, {
             allowBlank:false,
             blankText: acs_lang_text.folder_name_required || 'A folder name is required',
-            editDelay:20,
             ignoreNoChange:true
         });
 
@@ -719,11 +724,18 @@ ajaxfs.prototype = {
         var record = dm.getAt(i);
         var object_type = record.get("type");
         var recordid = record.get("id");
+        var openitem_txt;
         
-        if( object_type == "folder") {
-            var openitem_txt = "Open";
-        } else {
-            var openitem_txt = "Download";
+        switch (object_type ) {
+            case "folder" :
+                openitem_txt = "Open";
+                break;
+            case "url" :
+                openitem_txt = "Open";
+                break;
+            default :
+                openitem_txt = "Download";
+                break;
         }
 
         // create the menus
@@ -801,26 +813,35 @@ ajaxfs.prototype = {
             this.contextmenu.items.items[4].show();
             this.contextmenu.items.items[5].show();
             this.contextmenu.items.items[6].show();
-            if (object_type == "folder") {
-                this.contextmenu.items.items[1].hide();
-                this.contextmenu.items.items[7].hide();
-                this.contextmenu.items.items[8].show();
-                if (treepanel.getNodeById(recordid).attributes.attributes.type == "symlink") {
+            
+            switch (object_type) {
+                case "folder" :
+                    this.contextmenu.items.items[1].hide();
+                    this.contextmenu.items.items[7].hide();
+                    this.contextmenu.items.items[8].show();
+                    if (treepanel.getNodeById(recordid).attributes.attributes.type == "symlink") {
+                        this.contextmenu.items.items[9].hide();
+                    } else {
+                        this.contextmenu.items.items[9].show();
+                    }
+                    break;
+                case "url" :
+                    this.contextmenu.items.items[1].show();
+                    this.contextmenu.items.items[7].hide();
+                    this.contextmenu.items.items[8].hide();
                     this.contextmenu.items.items[9].hide();
-                } else {
-                    this.contextmenu.items.items[9].show();
-                }
-            } else {
-                if (object_type == "symlink") {
+                    break;
+                case "symlink":
                     this.contextmenu.items.items[4].hide();
                     this.contextmenu.items.items[9].hide();
-                } else {
+                    break;
+                default:
                     this.contextmenu.items.items[1].show();
                     this.contextmenu.items.items[7].show();
                     this.contextmenu.items.items[8].hide();
                     this.contextmenu.items.items[9].hide();
-                }
             }
+        
         }
 
         // always disable if shared folders are not supported
@@ -967,7 +988,8 @@ ajaxfs.prototype = {
                 return;
             } else {
                 // confirmation message
-                var msg =  err_msg_txt+' <b>'+selectednode.attributes["text"]+'</b>?';
+                var msg = err_msg_txt2 + " <b>"+selectednode.attributes.attributes["size"]+"</b>.<br>";
+                msg = msg + err_msg_txt+' <b>'+selectednode.attributes["text"]+'</b>?';
             }
 
         }
@@ -1340,7 +1362,7 @@ ajaxfs.prototype = {
                     buttonAlign:'left',
                     items: [
                         {xtype:'textfield',fieldLabel: 'Title',allowBlank:false,name:'fstitle',tabIndex:1},
-                        {xtype:'textfield',fieldLabel: 'URL',allowBlank:false,name:'fsurl',tabIndex:2},
+                        {xtype:'textfield',fieldLabel: 'URL',allowBlank:false,name:'fsurl',tabIndex:2,validator:isURL},
                         {xtype:'textfield',fieldLabel: 'Description',name:'fsdescription',tabIndex:3}
                     ]
                 }), buttons:  [{
@@ -1354,6 +1376,8 @@ ajaxfs.prototype = {
                                 scope: this,
                                 success: function(form,action) {
                                     if(action.result) {
+                                        var treepanel = this.layout.findById('treepanel');
+                                        treepanel.getSelectionModel().getSelectedNode().fireEvent("click",treepanel.getSelectionModel().getSelectedNode());
                                         this.createurlWindow.hide();
                                     } else {
                                         Ext.MessageBox.alert('Error','Sorry an error occured.<br>'+action.result.error);
