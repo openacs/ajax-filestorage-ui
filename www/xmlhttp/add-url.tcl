@@ -1,6 +1,6 @@
 ad_page_contract {
 
-Add a URL to the file storage instance
+    Add a URL to the file storage instance
 
 } {
     folder_id:integer,notnull

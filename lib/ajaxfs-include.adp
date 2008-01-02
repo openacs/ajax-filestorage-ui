@@ -4,8 +4,8 @@
     </if>
     <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.3.1/build/autocomplete/assets/skins/sam/autocomplete.css" />
     <link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/ajaxfs.css">
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.3.1/build/utilities/utilities.js"></script>
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.3.1/build/autocomplete/autocomplete-min.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.4.1/build/utilities/utilities.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.4.1/build/autocomplete/autocomplete-min.js"></script>
     <script type="text/javascript" src="/resources/ajaxhelper/ext2/adapter/yui/ext-yui-adapter.js"></script>
     <script type="text/javascript" src="/resources/ajaxhelper/ext2/ext-all.js"></script>
     <script type="text/javascript" src="/resources/ajax-filestorage-ui/swfupload/swfupload.js"></script>

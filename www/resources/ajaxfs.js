@@ -21,6 +21,7 @@ ajaxfs = function(configObj) {
     // - configObj.layoutdiv : the div container where we put the layout, if none is provided then document.body is used
     // - configObj.xmlhttpurl : just in case ajaxfs is mounted elsewhere other than /ajaxfs
     // - configObj.createUrl : do we show the createurl button in the toolbar
+    // - configObj.sharefolders : do we implement folder sharing
 
     // ** properties **
 
@@ -49,9 +50,6 @@ ajaxfs = function(configObj) {
     // currently selected tag
     this.currenttag = null;
 
-    // reusable aync data connection
-    this.asyncCon = new Ext.data.Connection();
-
     // reference to messagebox
     this.msgbox = Ext.MessageBox;
 
@@ -61,11 +59,14 @@ ajaxfs = function(configObj) {
     // tagdialog
     this.tagWindow = null;
 
-    // create ur dialog
+    // create url window
     this.createurlWindow = null;
 
     // share folder window
     this.sharefolderWindow = null;
+
+    // revisions window
+    this.revisionsWindow = null;
 
     // reference to contextmenu
     this.contextmenu = null;
@@ -335,7 +336,7 @@ ajaxfs.prototype = {
                     this.redirectPerms(grid, i);
                     break;
                 case "mnProp":
-                    this.redirectProperties(grid, i);
+                    this.showRevisions(grid, i);
                     break;
                 case "mnArch":
                     this.downloadArchive(recordid);
@@ -644,14 +645,20 @@ ajaxfs.prototype = {
 
     createRight : function() {
 
+        var renderfilename = function(value,p,record) {
+            p.attr = "ext:qtip='"+record.get("qtip")+"'";
+            return value;
+        }
+
         var cols = [{header: "", width: 30,sortable: true, dataIndex: 'icon'},
-                    {header: acs_lang_text.filename || "Filename", id:'filename', sortable: true, dataIndex: 'title'},
+                    {header: acs_lang_text.filename || "Filename", id:'filename', sortable: true, dataIndex: 'title', renderer:renderfilename},
                     {header: acs_lang_text.size || "Size", sortable: true, dataIndex: 'size'},
                     {header: acs_lang_text.lastmodified || "Last Modified", sortable: true, dataIndex: 'lastmodified'}];
 
         var reader = new Ext.data.JsonReader(
                     {totalProperty: 'total', root: 'foldercontents', id: 'id'}, [
                     {name:'id', type: 'int'},
+                    {name:'qtip'},
                     {name:'icon'},
                     {name:'title'},
                     {name:'filename'},
@@ -780,7 +787,7 @@ ajaxfs.prototype = {
             new Ext.menu.Item({
                 text: acs_lang_text.properties || 'Properties',
                 icon: '/resources/ajaxhelper/icons/page_edit.png',
-                handler: this.redirectProperties.createDelegate(this,[grid, i, e],false)
+                handler: this.showRevisions.createDelegate(this,[grid, i, e],false)
             }), 
             new Ext.menu.Item({
                 text: acs_lang_text.download_archive || 'Download archive',
@@ -1580,7 +1587,7 @@ ajaxfs.prototype = {
     // download archive function
     downloadArchive : function(object_id) {
         if(object_id) {
-            top.location.href="download-archive/?object_id="+object_id;
+            top.location.href=this.config.package_url+"download-archive/?object_id="+object_id;
         }
     },
 
@@ -1720,6 +1727,203 @@ ajaxfs.prototype = {
         var object_id = node.get("id");
         var newwindow = window.open(window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"file?file_id="+object_id);
         newwindow.focus();
+    },
+
+    // show revisions window
+    showRevisions : function(grid,i,e) {
+
+        var filepanel = grid;
+        var node =  filepanel.store.getAt(i);
+        var object_id = node.get("id");
+        var fstitle = node.get("filename");
+        var revWindow = this.revisionsWindow;
+
+        if(revWindow== null) {
+
+            revWindow = new Ext.Window({
+                id:'rev-win',
+                layout:'fit',
+                width:550,
+                height:300,
+                closeAction:'hide',
+                modal:true,
+                plain:true,
+                items: new Ext.TabPanel({
+                    id:'rev-tabs',
+                    items: [this.createRevGrid(),this.newRevForm()]
+                })
+            });
+
+            this.revisionsWindow = revWindow;
+
+        }
+        
+        revWindow.setTitle(fstitle+' - '+acs_lang_text.properties || 'Properties');
+
+        var revgrid = revWindow.findById("revisionspanel");
+        var revtab = revWindow.findById("rev-tabs");
+        var revform = revWindow.findById("rev-form");
+        var package_id = this.config.package_id;
+
+        revgrid.store.on("load",function() {
+            this.getSelectionModel().selectFirstRow();
+        },revgrid);
+
+        revgrid.on("activate",function() {
+            this.store.baseParams['file_id']=object_id;
+            this.store.baseParams['package_id']=package_id;
+            this.store.load();
+        },revgrid);
+
+        revWindow.on("beforehide",function() {
+            this.activate(1);
+        },revtab);
+
+        revWindow.on("show",function() {
+            this.activate(0);
+        },revtab);
+
+        revWindow.show();
+
+    },
+
+    // create the grid that shows the revisions for a file
+    createRevGrid : function() {
+
+       var cols = [ {header: "", width: 30, sortable:false, dataIndex:'icon'},
+                    {header: "Title", width: 180, sortable:false, dataIndex:'title'},
+                    {header: "Author", sortable:false, dataIndex:'author'},
+                    {header: "Size", sortable:false, dataIndex:'size'},
+                    {header: "Last Modified", sortable:false, dataIndex:'lastmodified'}];
+
+       var reader = new Ext.data.JsonReader(
+                    {totalProperty: 'total', root: 'revisions', id: 'revision_id'}, [
+                    {name:'revision_id', type: 'int'},
+                    {name:'icon'},
+                    {name:'title'},
+                    {name:'author'},
+                    {name:'type'},
+                    {name:'size'},
+                    {name:'url'},
+                    {name:'lastmodified'}] );
+
+        var proxy = new Ext.data.HttpProxy( {
+                        url : this.xmlhttpurl+ 'get-filerevisions'
+                    } );
+
+        var colModel = new Ext.grid.ColumnModel(cols);
+
+        var dataModel = new Ext.data.Store({proxy: proxy, reader: reader});
+
+        var toolbar = [
+            {
+             text:"Download",
+             tooltip:"Download this revision",
+             icon:"/resources/ajaxhelper/icons/arrow_down.png",
+             cls:"x-btn-text-icon",
+             handler: function() {
+                var grid = this.revisionsWindow.findById("revisionspanel");
+                var record = grid.getSelectionModel().getSelected();
+                window.open(record.get("url"));
+                window.focus();
+             }.createDelegate(this)
+            }, {
+             text:"Delete",
+             tooltip:"Delete this revision",
+             icon:"/resources/ajaxhelper/icons/delete.png",
+             cls:"x-btn-text-icon",
+             handler: function() { 
+                var grid = this.revisionsWindow.findById("revisionspanel");
+                var sm = grid.getSelectionModel();
+                var record = sm.getSelected();
+                var version_id = record.get("revision_id");
+                var fstitle = record.get("title");
+                var xmlhttpurl = this.xmlhttpurl;
+                if(grid.store.getCount()==1) {
+                    Ext.Msg.alert("Warning","Sorry, you can not delete the only revision for this file. You can delete the file instead");
+                } else {
+                    Ext.Msg.confirm('Delete','Are you sure you want to delete this version of '+fstitle+' ? This action can not be reversed.',function(btn) {
+                        if(btn=="yes") {
+                            Ext.Ajax.request({
+                                url:xmlhttpurl+'delete-fileversion',
+                                params:{version_id:version_id},
+                                success:function(o) {
+                                    sm.selectPrevious();
+                                    grid.store.remove(record);
+                                }, failure:function() {
+                                    Ext.Msg.alert('Delete Error','Sorry an error occurred. Please try again later.')
+                                }
+                            })
+                        }
+                    })
+                }
+             }.createDelegate(this)
+            }
+        ];
+
+        var gridpanel = new Ext.grid.GridPanel( {
+            store: dataModel,
+            cm: colModel,
+            sm:new Ext.grid.RowSelectionModel({singleSelect:true}),
+            id:'revisionspanel',
+            title:"Revisions",
+            loadMask:true,
+            tbar:toolbar
+        });
+
+        return gridpanel;
+    },
+
+    // create the form to upload a new revision
+    newRevForm : function() {
+        var msg1 = "Please choose a file to upload";
+        var panel = new Ext.Panel({
+            id:'rev-form',
+            align:'left',
+            frame:true,
+            title:'New Revision',
+            html: "<form id=\"newrevfileform\" name=\"newrevfileform\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"package_id\" value=\""+this.config.package_id+"\"><input type=\"hidden\" name=\"file_id\" id=\"rev_file_id\" value=\"\"><input type=\"hidden\" name=\"title\" id=\"rev_file_title\" value=\"\"><p>"+msg1+"<br /><br /><input type=\"file\" name=\"upload_file\" size='35' id=\"rev_upload_file\"></p></form>",
+            buttons: [ {
+                text:"Upload New Revision",
+                handler: function(button) {
+
+                    if(Ext.get("rev_upload_file").dom.value=="") {
+
+                        Ext.Msg.alert("Warning","Please choose a file to upload");
+
+                    } else {
+                        var grid = this.layout.findById('filepanel');
+                        var selectedRow = grid.getSelectionModel().getSelected();
+                        Ext.get("rev_file_id").dom.value = selectedRow.get("id");
+                        Ext.get("rev_file_title").dom.value = selectedRow.get("title");
+
+                        var callback = {
+                            success: function() {
+                            }, upload: function() {
+                                this.revisionsWindow.findById("rev-tabs").activate(0);
+                                Ext.get("newrevfileform").dom.reset();
+                                this.revisionsWindow.findById("rev-form").body.unmask();
+                                button.enable();
+                            }, failure: function() {
+                                Ext.Msg.alert(acs_lang_text.error || "Error", acs_lang_text.upload_failed || "Upload failed, please try again later.");
+                                this.revisionsWindow.findById("rev-form").body.unmask();
+                                button.enable();
+                            }, scope: this
+                        }
+            
+                        this.revisionsWindow.findById("rev-form").body.mask("<center><img src='/resources/ajaxhelper/images/indicator.gif'><br>Uploading new revision. Please wait</center>");
+                        button.disable();
+            
+                        YAHOO.util.Connect.setForm("newrevfileform", true, true);
+            
+                        var cObj = YAHOO.util.Connect.asyncRequest("POST", this.xmlhttpurl+"add-filerevision", callback);
+                    }
+                }.createDelegate(this),
+                icon:"/resources/ajaxhelper/icons/arrow_up.png",
+                cls:"x-btn-text-icon"
+            } ]
+        });
+        return panel;
     },
 
     // generates a url to the currently selected file storage item

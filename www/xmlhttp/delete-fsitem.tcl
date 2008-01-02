@@ -9,8 +9,6 @@ ad_page_contract {
     object_id:multiple
 }
 
-set user_id [ad_conn user_id]
-
 set result "{\"success\":true}"
 set fs_object_ids [split $object_id " "]
 set viewing_user_id [ad_conn user_id]
