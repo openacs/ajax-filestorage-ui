@@ -29,7 +29,7 @@
                 from acs_object_party_privilege_map m
                 where m.object_id = fs_objects.object_id
                 and m.party_id = :viewing_user_id
-                and m.privilege = 'read') order by fs_objects.title
+                and m.privilege = 'read') order by lower(fs_objects.name)
     </querytext>
   </fullquery>
 

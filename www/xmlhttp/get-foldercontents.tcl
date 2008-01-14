@@ -9,9 +9,9 @@ ad_page_contract {
 } {
     folder_id:optional
     tag_id:integer,optional
-    {sort "fs_objects.title"}
+    {sort "icon"}
     {package_id:optional}
-    {dir "DESC"}
+    {dir "ASC"}
 }
 
 # who's looking
@@ -43,6 +43,13 @@ set n_past_days 99999
 # sorting **********
 set orderby ""
 if { [exists_and_not_null sort] } {
+    if {$sort == "icon"} { 
+        if { $dir == "DESC" } {
+            set sort "sort_key_desc, lower(fs_objects.name)"
+        } else {
+            set sort "fs_objects.sort_key, lower(fs_objects.name)"
+        }
+    }
     if {$sort == "title"} { set sort "lower(fs_objects.title)" }
     if {$sort == "size"} { set sort "fs_objects.content_size" }
     if {$sort == "lastmodified"} { set sort "fs_objects.last_modified" }
