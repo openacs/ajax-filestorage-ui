@@ -1626,11 +1626,32 @@ ajaxfs.prototype = {
 
         if(shareWindow == null) {
 
-            var shareFormBody = new Ext.Panel({
-                id:'form_addtag',
-                autoScroll:true,
+            var communities = new Ext.data.JsonStore({
+                url: xmlhttpurl+'list-communities',
+                root: 'communities',
+                fields: ['target_folder_id', 'instance_name']
+            });
+
+            this.communityCombo = new Ext.form.ComboBox({
+                id:'communities_list',
+                store: communities,
+                displayField:'instance_name',
+                typeAhead: true,
+                fieldLabel:'Community',
+                triggerAction: 'all',
+                emptyText:'Select a community',
+                hiddenName:'target_folder_id',
+                valueField:'target_folder_id',
+                forceSelection:true,
+                handleHeight: 80,
+                selectOnFocus:true
+            });
+
+            var shareFormBody = new Ext.form.FormPanel({
+                id:'sharefolderform',
+                title:'Select the community where you wish to share the <b>'+foldertitle+'</b> folder with.',
                 frame:true,
-                html: "<div style='text-align:left'>Select the community where you wish to share the <b>"+foldertitle+"</b> folder with.<br><br><input type='text' size='30' id='communities_list' /></div></div>"
+                items : this.communityCombo
             });
     
             var shareBtns = [{
@@ -1662,36 +1683,11 @@ ajaxfs.prototype = {
                 buttons: shareBtns
             });
 
-            shareWindow.on("show",function() {
-
-                if(this.communityCombo == null) {
-
-                    var communities = new Ext.data.JsonStore({
-                        url: xmlhttpurl+'list-communities',
-                        root: 'communities',
-                        fields: ['target_folder_id', 'instance_name']
-                    });
-
-                    this.communityCombo = new Ext.form.ComboBox({
-                        store: communities,
-                        displayField:'instance_name',
-                        typeAhead: true,
-                        triggerAction: 'all',
-                        emptyText:'Select a community',
-                        hiddenName:'target_folder_id',
-                        valueField:'target_folder_id',
-                        forceSelection:true,
-                        handleHeight: 80,
-                        selectOnFocus:true,
-                        applyTo:'communities_list'
-                    });
-
-                }
-
-            },this);
+            this.sharefolderWindow = shareWindow;
 
         } else {
 
+            this.sharefolderWindow.findById('sharefolderform').setTitle('Select the community where you wish to share the <b>'+foldertitle+'</b> folder with.');
             this.communityCombo.reset();
 
         }
@@ -1699,7 +1695,6 @@ ajaxfs.prototype = {
         shareWindow.show();
 
     },
-
     // redirect to object views for a file
     redirectViews : function(grid,i,e) {
         var filepanel = grid;
@@ -1734,6 +1729,7 @@ ajaxfs.prototype = {
 
         var filepanel = grid;
         var node =  filepanel.store.getAt(i);
+        filepanel.getSelectionModel().selectRow(i);
         var object_id = node.get("id");
         var fstitle = node.get("filename");
         var revWindow = this.revisionsWindow;

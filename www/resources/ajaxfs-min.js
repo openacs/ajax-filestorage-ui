@@ -870,18 +870,16 @@ Ext.Msg.alert("Error","Sorry, we encountered an error. Please try again later.")
 },params:{target_folder_id:_107,folder_id:_fe}});
 };
 if(_103==null){
-var _109=new Ext.Panel({id:"form_addtag",autoScroll:true,frame:true,html:"<div style='text-align:left'>Select the community where you wish to share the <b>"+_ff+"</b> folder with.<br><br><input type='text' size='30' id='communities_list' /></div></div>"});
-var _10a=[{text:"Ok",icon:"/resources/ajaxhelper/icons/disk.png",cls:"x-btn-text-icon",handler:_106.createDelegate(this)},{text:"Cancel",icon:"/resources/ajaxhelper/icons/cross.png",cls:"x-btn-text-icon",handler:function(){
+var _109=new Ext.data.JsonStore({url:_102+"list-communities",root:"communities",fields:["target_folder_id","instance_name"]});
+this.communityCombo=new Ext.form.ComboBox({id:"communities_list",store:_109,displayField:"instance_name",typeAhead:true,fieldLabel:"Community",triggerAction:"all",emptyText:"Select a community",hiddenName:"target_folder_id",valueField:"target_folder_id",forceSelection:true,handleHeight:80,selectOnFocus:true});
+var _10a=new Ext.form.FormPanel({id:"sharefolderform",title:"Select the community where you wish to share the <b>"+_ff+"</b> folder with.",frame:true,items:this.communityCombo});
+var _10b=[{text:"Ok",icon:"/resources/ajaxhelper/icons/disk.png",cls:"x-btn-text-icon",handler:_106.createDelegate(this)},{text:"Cancel",icon:"/resources/ajaxhelper/icons/cross.png",cls:"x-btn-text-icon",handler:function(){
 _103.hide();
 }.createDelegate(this)}];
-_103=new Ext.Window({id:"share-win",layout:"fit",width:380,height:200,title:"Share Folder",closeAction:"hide",modal:true,plain:true,autoScroll:false,resizable:false,items:_109,buttons:_10a});
-_103.on("show",function(){
-if(this.communityCombo==null){
-var _10b=new Ext.data.JsonStore({url:_102+"list-communities",root:"communities",fields:["target_folder_id","instance_name"]});
-this.communityCombo=new Ext.form.ComboBox({store:_10b,displayField:"instance_name",typeAhead:true,triggerAction:"all",emptyText:"Select a community",hiddenName:"target_folder_id",valueField:"target_folder_id",forceSelection:true,handleHeight:80,selectOnFocus:true,applyTo:"communities_list"});
-}
-},this);
+_103=new Ext.Window({id:"share-win",layout:"fit",width:380,height:200,title:"Share Folder",closeAction:"hide",modal:true,plain:true,autoScroll:false,resizable:false,items:_10a,buttons:_10b});
+this.sharefolderWindow=_103;
 }else{
+this.sharefolderWindow.findById("sharefolderform").setTitle("Select the community where you wish to share the <b>"+_ff+"</b> folder with.");
 this.communityCombo.reset();
 }
 _103.show();
@@ -906,6 +904,7 @@ _11f.focus();
 },showRevisions:function(grid,i,e){
 var _123=grid;
 var node=_123.store.getAt(i);
+_123.getSelectionModel().selectRow(i);
 var _125=node.get("id");
 var _126=node.get("filename");
 var _127=this.revisionsWindow;
