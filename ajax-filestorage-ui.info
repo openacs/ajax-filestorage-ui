@@ -12,7 +12,7 @@
         <owner url="mailto:ham@solutiongrove.com">Hamilton Chua</owner>
         <release-date>2007-11-25</release-date>
         <vendor url="http://www.solutiongrove.com">Solutiongrove</vendor>
-        <maturity>1</maturity>
+        <maturity>3</maturity>
 
         <provides url="ajax-filestorage-ui" version="1.0"/>
         <requires url="ajaxhelper" version="0.8d"/>

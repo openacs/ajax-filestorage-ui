@@ -98,6 +98,11 @@ ajaxfs = function(configObj) {
                 if(this.config.xmlhttpurl) { this.xmlhttpurl = this.config.xmlhttpurl }
                 if(this.config.create_url == 0) { this.create_url_p = false }
                 if(this.config.share_folders == 0) { this.share_folders_p = false }
+                if(this.config.views_p == 0) {
+                    this.views_p = false
+                } else {
+                    this.views_p = true
+                }
 
                 // generic listener to check if 
                 // the connection has returned a login form
@@ -152,7 +157,7 @@ ajaxfs.prototype = {
             var x = x+1;
             var nextnodeid = this.config.pathToFolder[x];
             var nextnode = treepanel.getNodeById(nextnodeid);
-            nextnode.on("expand",asyncExpand.createDelegate(this,[x]), this, {single:true});
+            nextnode.on("expand",this.asyncExpand.createDelegate(this,[x]), this, {single:true});
             nextnode.expand(true);
         } else {
             node.select()
@@ -268,90 +273,147 @@ ajaxfs.prototype = {
         menu.on("beforeshow",function() {
 
             var gridpanel = this.layout.findById('filepanel');
+            var treepanel = this.layout.findById('treepanel');
 
-            if (gridpanel.getSelectionModel().getCount() == 1) {
-                var selectedRow = gridpanel.getSelectionModel().getSelections();
+            if (gridpanel.getSelectionModel().getCount() == 0) {
+
+                // no file from the grid has been selected
+                // allow use of this tool on the treepanel folders
+
                 for(var x=0; x<menu.items.items.length;x++) {
                     menu.items.items[x].enable();
                 }
-                switch (selectedRow[0].get("type"))  {
-                    case "folder":
-                        menu.items.items[0].setText("Open");
-                        menu.items.items[1].disable();
-                        menu.items.items[6].disable();
-                        break;
-                    case "symlink":
-                        menu.items.items[0].setText("Open");
-                        menu.items.items[1].disable();
-                        menu.items.items[3].disable();
-                        menu.items.items[6].disable();
-                        break;
-                    case "url" :
-                        menu.items.items[0].setText("Open");
-                        menu.items.items[6].disable();
-                        menu.items.items[7].disable();
-                        menu.items.items[8].disable();
-                        break;
-                    default :
-                        menu.items.items[0].setText("Download");
-                        menu.items.items[7].disable();
-                        menu.items.items[8].disable();
-                        break;
+
+                menu.items.items[0].setText("Open");
+                menu.items.items[0].disable();
+                menu.items.items[1].disable();
+                menu.items.items[6].disable();
+                menu.items.items[8].disable();
+
+                // always disable views if views package is not installed
+                if(!this.views_p) {
+                    menu.items.items[2].disable();
                 }
-                // always disable if shared folders are not supported
-                if(!this.share_folders_p) {
-                    menu.items.items[8].disable();
-                }
+
             } else {
-                for(var x=0; x<menu.items.items.length;x++) {
-                    menu.items.items[x].disable();
+
+                if (gridpanel.getSelectionModel().getCount() == 1) {
+    
+                    var selectedRow = gridpanel.getSelectionModel().getSelections();
+    
+                    for(var x=0; x<menu.items.items.length;x++) {
+                        menu.items.items[x].enable();
+                    }
+    
+                    switch (selectedRow[0].get("type"))  {
+                        case "folder":
+                            menu.items.items[0].setText("Open");
+                            menu.items.items[1].disable();
+                            menu.items.items[6].disable();
+                            break;
+                        case "symlink":
+                            menu.items.items[0].setText("Open");
+                            menu.items.items[1].disable();
+                            menu.items.items[3].disable();
+                            menu.items.items[6].disable();
+                            break;
+                        case "url" :
+                            menu.items.items[0].setText("Open");
+                            menu.items.items[6].disable();
+                            menu.items.items[7].disable();
+                            menu.items.items[8].disable();
+                            break;
+                        default :
+                            menu.items.items[0].setText("Download");
+                            menu.items.items[7].disable();
+                            menu.items.items[8].disable();
+                            break;
+                    }
+    
+                    // always disable if shared folders are not supported
+                    if(!this.share_folders_p) {
+                        menu.items.items[8].disable();
+                    }
+    
+                    // always disable views if views package is not installed
+                    if(!this.views_p) {
+                        menu.items.items[2].disable();
+                    }
+    
+                } else {
+    
+                    for(var x=0; x<menu.items.items.length;x++) {
+                        menu.items.items[x].disable();
+                    }
+    
                 }
+
             }
+
         },this);
 
         menu.on("itemclick",function(item,e) {
-            var grid = this.layout.findById('filepanel');
-            var selectedRow = grid.getSelectionModel().getSelected();
-            var recordid = selectedRow.get("id");
-            for (var x=0; x<grid.store.data.items.length; x++) {
-                if (grid.store.data.items[x].id == recordid) { var i = x; break }
+
+            var gridpanel = this.layout.findById('filepanel');
+
+            if(gridpanel.getSelectionModel().getCount() == 1) {
+
+                // panel is the filegrid
+                var panel = gridpanel;
+                var recordid = panel.getSelectionModel().getSelected().get("id");
+    
+                for (var x=0; x<panel.store.data.items.length; x++) {
+                    if (panel.store.data.items[x].id == recordid) { var i = x; break }
+                }
+
+            } else {
+
+                // panel is the tree
+                var panel = this.layout.findById('treepanel');
+                var recordid = panel.getSelectionModel().getSelectedNode().attributes["id"];
+                var i = recordid;
+
             }
+
+
             switch (item.getId())  {
                 case "mnOpen":
-                    this.openItem(grid, i);
+                    this.openItem(panel, i);
                     break;
                 case "mnTag":
-                    this.tagFsitem(grid, i);
+                    this.tagFsitem(panel, i);
                     break;
                 case "mnView":
-                    this.redirectViews(grid, i);
+                    this.redirectViews(panel, i);
                     break;
                 case "mnRename":
-                    this.renameItem(grid,i);
+                    this.renameItem(panel,i);
                     break;
                 case "mnCopyLink":
-                    this.copyLink(grid,i);
+                    this.copyLink(panel,i);
                     break;
                 case "mnPerms":
-                    this.redirectPerms(grid, i);
+                    this.redirectPerms(panel, i);
                     break;
                 case "mnProp":
-                    this.showRevisions(grid, i);
+                    this.showRevisions(panel, i);
                     break;
                 case "mnArch":
                     this.downloadArchive(recordid);
                     break;
                 case "mnShare":
-                    this.showShareOptions(grid, i);
+                    this.showShareOptions(panel, i);
                     break;
             }
+
         },this);
 
         var tbutton = {
             text:'Tools',
             iconCls:'toolsmenu',
             menu: menu
-        }
+        };
+
         return tbutton;
     },
 
@@ -848,12 +910,18 @@ ajaxfs.prototype = {
                     this.contextmenu.items.items[8].hide();
                     this.contextmenu.items.items[9].hide();
             }
-        
+
+
         }
 
         // always disable if shared folders are not supported
         if(!this.share_folders_p) {
             this.contextmenu.items.items[9].hide();
+        }
+
+        // always disable if views package is not supported
+        if(!this.views_p) {
+            this.contextmenu.items.items[2].hide();
         }
 
         if(rootnode.attributes["write_p"] == 'f') {
@@ -1306,6 +1374,9 @@ ajaxfs.prototype = {
                 buttons: uploadBtns
             });
 
+        } else {
+            // c/o Franz Penz
+            document.getElementById('newfileform').folder_id.value = this.currentfolder;
         }
 
         this.upldWindow.show();
@@ -1415,80 +1486,89 @@ ajaxfs.prototype = {
     },
 
     // rename a file or folder in the right panel
-    renameItem : function(grid,i,e) {
+    renameItem : function(panel,i,e) {
 
-        var filepanel = grid;
-        var treepanel = this.layout.findById('treepanel');
-        var node =  filepanel.store.getAt(i);
-        var nodeurl = node.get("url");
-        var nodetype = node.get("type");
-        var nodeid = node.get("id");
-        var nodesubtitle = node.get("filename");
+        if(panel.id == "treepanel") {
 
-        var successRename = function(response) {
-            var err_msg_txt = acs_lang_text.an_error_occurred || "An error occurred";
-            var err_msg_txt2 = acs_lang_text.reverted || "Your changes have been reverted";
-            var resultObj = Ext.decode(response.responseText);
-            if (!resultObj.success) {
-                Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt + ": <br><br><font color='red'>"+resultObj.error+"</font><br><br>"+err_msg_txt2);
-            } else {
+            var node = panel.getSelectionModel().getSelectedNode();
+            this.te.triggerEdit(node);
 
-                if(nodetype=="folder") { treepanel.getNodeById(nodeid).setText(resultObj.newname) }
+        } else {
 
-                if(nodetype!="folder"&&nodesubtitle===" ") { 
-                    nodesubtitle = node.get("title");
-                    node.set("filename",nodesubtitle);
-                }
-
-                node.set("title",resultObj.newname);
-                node.commit();
-            }
-        };
-
-        var handleRename = function(btn, text) {
-           if(btn=='ok') {
-
-                if(text != '') {
-
-                    if(text.length > 100) {
-
-                        Ext.Msg.alert(acs_lang_text.alert || "Alert",acs_lang_text.limitto100 || "Please limit your name to 100 characters or less.");
-                        return false;
-
-                    } else {
-
-                        Ext.Ajax.request({
-                            url:this.xmlhttpurl+"edit-name",
-                            success: successRename,
-                            failure: function(response) {
-                                var resultObj = Ext.decode(response.responseText);
-                                Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
-                            }, params: { newname:text,object_id:nodeid,type:nodetype,url:nodeurl}
-                        });
-
-                    }
-
+            var filepanel = panel;
+            var treepanel = this.layout.findById('treepanel');
+            var node =  filepanel.store.getAt(i);
+            var nodeurl = node.get("url");
+            var nodetype = node.get("type");
+            var nodeid = node.get("id");
+            var nodesubtitle = node.get("filename");
+    
+            var successRename = function(response) {
+                var err_msg_txt = acs_lang_text.an_error_occurred || "An error occurred";
+                var err_msg_txt2 = acs_lang_text.reverted || "Your changes have been reverted";
+                var resultObj = Ext.decode(response.responseText);
+                if (!resultObj.success) {
+                    Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt + ": <br><br><font color='red'>"+resultObj.error+"</font><br><br>"+err_msg_txt2);
                 } else {
-
-                    Ext.Msg.alert(acs_lang_text.alert || "Alert",acs_lang_text.enter_new_name || "Please enter a new name.");
-                    return false;
-
+    
+                    if(nodetype=="folder") { treepanel.getNodeById(nodeid).setText(resultObj.newname) }
+    
+                    if(nodetype!="folder"&&nodesubtitle===" ") { 
+                        nodesubtitle = node.get("title");
+                        node.set("filename",nodesubtitle);
+                    }
+    
+                    node.set("title",resultObj.newname);
+                    node.commit();
                 }
+            };
+    
+            var handleRename = function(btn, text) {
+            if(btn=='ok') {
+    
+                    if(text != '') {
+    
+                        if(text.length > 100) {
+    
+                            Ext.Msg.alert(acs_lang_text.alert || "Alert",acs_lang_text.limitto100 || "Please limit your name to 100 characters or less.");
+                            return false;
+    
+                        } else {
+    
+                            Ext.Ajax.request({
+                                url:this.xmlhttpurl+"edit-name",
+                                success: successRename,
+                                failure: function(response) {
+                                    var resultObj = Ext.decode(response.responseText);
+                                    Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
+                                }, params: { newname:text,object_id:nodeid,type:nodetype,url:nodeurl}
+                            });
+    
+                        }
+    
+                    } else {
+    
+                        Ext.Msg.alert(acs_lang_text.alert || "Alert",acs_lang_text.enter_new_name || "Please enter a new name.");
+                        return false;
+    
+                    }
+    
+                }
+            };
+    
+            Ext.Msg.show({
+                title: acs_lang_text.rename || 'Rename',
+                prompt: true,
+                msg: acs_lang_text.enter_new_name || 'Please enter a new name for ... ',
+                value: node.get("title"),
+                buttons: Ext.Msg.OKCANCEL,
+                fn: handleRename.createDelegate(this)
+            });
+    
+            var prompt_text_el = YAHOO.util.Dom.getElementsByClassName('ext-mb-input', 'input'); 
+            prompt_text_el[0].select();
 
-            }
-        };
-
-        Ext.Msg.show({
-            title: acs_lang_text.rename || 'Rename',
-            prompt: true,
-            msg: acs_lang_text.enter_new_name || 'Please enter a new name for ... ',
-            value: node.get("title"),
-            buttons: Ext.Msg.OKCANCEL,
-            fn: handleRename.createDelegate(this)
-        });
-
-        var prompt_text_el = YAHOO.util.Dom.getElementsByClassName('ext-mb-input', 'input'); 
-        prompt_text_el[0].select();
+        }
 
     },
 
@@ -1696,20 +1776,40 @@ ajaxfs.prototype = {
 
     },
     // redirect to object views for a file
-    redirectViews : function(grid,i,e) {
-        var filepanel = grid;
-        var node =  filepanel.store.getAt(i);
-        var object_id = node.get("id");
+    redirectViews : function(panel,i,e) {
+
+        if(panel.id == "filepanel") {
+
+            var filepanel = panel;
+            var node =  filepanel.store.getAt(i);
+            var object_id = node.get("id");
+
+        } else {
+
+            var object_id = i
+
+        }
+
         window.open(window.location.protocol+"//"+window.location.hostname+"/o/"+object_id+"/info");
         window.focus();
     },
 
 
     // redirect to permissions
-    redirectPerms : function(grid,i,e) {
-        var filepanel = grid;
-        var node =  filepanel.store.getAt(i);
-        var object_id = node.get("id");
+    redirectPerms : function(panel,i,e) {
+
+        if(panel.id == "filepanel") {
+
+            var filepanel = grid;
+            var node = filepanel.store.getAt(i);
+            var object_id = node.get("id");
+
+        } else {
+
+            var object_id = i;
+
+        }
+
         var newwindow = window.open(window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"permissions?object_id="+object_id+"&return_url="+window.location.pathname+"?package_id="+this.config.package_id+"&folder_id="+this.currentfolder);
         newwindow.focus();
     },
@@ -1925,18 +2025,27 @@ ajaxfs.prototype = {
     // generates a url to the currently selected file storage item
     // if it's a file : download
     // if it's a folder : append folder_id to the current url
-    copyLink : function(grid,i,e) {
-        var filepanel = grid;
-        var node = filepanel.store.getAt(i);
-        var nodetype = node.get("type");
-        if (nodetype === "folder") {
-            // generate the url to a folder
-            var copytext = window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"?package_id="+this.config.package_id+"&folder_id="+node.get("id");
-        } else if (nodetype === "url") {
-            var copytext = node.get("url");
+    copyLink : function(panel,i,e) {
+
+        if(panel.id == "treepanel") {
+
+            var copytext = window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"?package_id="+this.config.package_id+"&folder_id="+i;
+
         } else {
-            var copytext = window.location.protocol+"//"+window.location.hostname+node.get("url");
+
+            var filepanel = panel;
+            var node = filepanel.store.getAt(i);
+            var nodetype = node.get("type");
+            if (nodetype === "folder") {
+                // generate the url to a folder
+                var copytext = window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"?package_id="+this.config.package_id+"&folder_id="+node.get("id");
+            } else if (nodetype === "url") {
+                var copytext = node.get("url");
+            } else {
+                var copytext = window.location.protocol+"//"+window.location.hostname+node.get("url");
+            }
         }
+
         if(Ext.isIE) {
             window.clipboardData.setData("text",copytext);
         } else {

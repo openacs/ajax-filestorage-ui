@@ -40,7 +40,7 @@ if { [exists_and_not_null tree_id] } {
     }
     append suggestions_stub [join $suggestion_formatted_list ","]
 } else {
-    set suggetsions_stub ""
+    set suggestions_stub ""
 }
 # ********************
 
@@ -52,6 +52,11 @@ if { [exists_and_not_null package_id] } {
     set rootfolder_id [fs_get_root_folder -package_id $package_id]
     set instance_name [db_string "get_folder_name" "select name as instance_name from fs_folders where folder_id = :rootfolder_id"]
     set roottext [db_string "get_folder_name" "select name from fs_folders where folder_id = :rootfolder_id"]
+    set views_p [db_0or1row "check_views_package" "select package_key from apm_packages where package_key = 'views'"]
+
+    # c/o Franz Penz
+    regsub -all {"} $instance_name {\"} instance_name
+    regsub -all {"} $roottext {\"} roottext
 
     set write_p [permission::permission_p -no_cache \
             -party_id [ad_conn user_id] \
@@ -86,6 +91,7 @@ if { [exists_and_not_null package_id] } {
     lappend options "share_folders:$share_folders_p"
     lappend options "multi_file_upload:$multi_file_upload_p"
     lappend options "user_id:\"$user_id\""
+    lappend options "views_p:\"$views_p\""
 
     set options [join $options ","]
 

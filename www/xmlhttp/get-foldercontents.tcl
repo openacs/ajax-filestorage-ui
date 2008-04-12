@@ -97,6 +97,9 @@ if { [exists_and_not_null tag_id] } {
 
 db_multirow -extend { filename icon last_modified_pretty content_size_pretty download_url linkurl object_counter file_list_start file_list_end write_p tags symlink_id qtip} contents $query_name $query  {
 
+    # c/o Franz Penz
+    regsub -all {"} $title {\"} title 
+
     set symlink_id ""
     set qtip ${title}
 
