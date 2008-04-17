@@ -741,7 +741,9 @@ this.upldWindow.hide();
 }
 this.upldWindow=new Ext.Window({id:"upload-win",layout:"fit",width:400,height:300,title:_c3,closeAction:"hide",modal:_c2,plain:true,resizable:false,items:_c4,buttons:_c5});
 }else{
+if(!this.config.multi_file_upload||checkFlashVersion()<9||Ext.isLinux){
 document.getElementById("newfileform").folder_id.value=this.currentfolder;
+}
 }
 this.upldWindow.show();
 },uploadOneFile:function(){

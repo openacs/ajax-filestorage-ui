@@ -1375,8 +1375,9 @@ ajaxfs.prototype = {
             });
 
         } else {
-            // c/o Franz Penz
-            document.getElementById('newfileform').folder_id.value = this.currentfolder;
+            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || Ext.isLinux) {
+                document.getElementById('newfileform').folder_id.value = this.currentfolder;
+            }
         }
 
         this.upldWindow.show();
