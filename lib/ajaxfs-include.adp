@@ -1,11 +1,12 @@
+    <if @template_head_p@ eq 0>
     <link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext2/resources/css/ext-all.css">
     <if @theme@ not nil>
         <link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext2/resources/css/xtheme-@theme@.css">
     </if>
-    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.3.1/build/autocomplete/assets/skins/sam/autocomplete.css" />
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.5.1/build/autocomplete/assets/skins/sam/autocomplete.css" />
     <link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/ajaxfs.css">
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.4.1/build/utilities/utilities.js"></script>
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.4.1/build/autocomplete/autocomplete-min.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.5.1/build/utilities/utilities.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.5.1/build/autocomplete/autocomplete-min.js"></script>
     <script type="text/javascript" src="/resources/ajaxhelper/ext2/adapter/yui/ext-yui-adapter.js"></script>
     <script type="text/javascript" src="/resources/ajaxhelper/ext2/ext-all.js"></script>
     <script type="text/javascript" src="/resources/ajax-filestorage-ui/swfupload/swfupload.js"></script>
@@ -15,8 +16,27 @@
     <else>
         <script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs-min.js"></script>
     </else>
+    </if>
     <if @options@ defined>
     <script type="text/javascript">
+     // preload
+    var pic_arr = [
+        "/resources/ajaxhelper/icons/folder.png",
+        "/resources/ajaxhelper/icons/folder_link.png",
+        "/resources/ajaxhelper/icons/link.png",
+        "/resources/ajaxhelper/icons/page_white_acrobat.png",
+        "/resources/ajaxhelper/icons/page_white_excel.png",
+        "/resources/ajaxhelper/icons/page_white_powerpoint.png",
+        "/resources/ajaxhelper/icons/page_white_compressed.png",
+        "/resources/ajaxhelper/icons/page_white_word.png",
+        "/resources/ajaxhelper/icons/film.png",
+        "/resources/ajaxhelper/icons/page_white_picture.png",
+        "/resources/ajaxhelper/icons/page_white.png"
+    ];
+    for(var i=0; i<pic_arr.length; i++) {
+        var preload_img = new Image(16,16);
+        preload_img.src = pic_arr[i];
+    }
     // autocomplete
     var oAutoCompArr = [@suggestions_stub;noquote@];
     // acs-lang

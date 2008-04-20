@@ -44,6 +44,26 @@ if { [exists_and_not_null tree_id] } {
 }
 # ********************
 
+set template_head_p 0
+if { [info commands ::template::head::add_javascript] ne "" } {
+    set template_head_p 1
+    template::head::add_css -order 500 -href "/resources/ajaxhelper/ext2/resources/css/ext-all.css"
+    template::head::add_css -order 501 -href "/resources/ajaxhelper/ext2/resources/css/xtheme-${theme}.css"
+    template::head::add_css -order 502 -href "http://yui.yahooapis.com/2.5.1/build/autocomplete/assets/skins/sam/autocomplete.css"
+    template::head::add_css -order 503 -href "/resources/ajax-filestorage-ui/ajaxfs.css"
+    template::head::add_javascript -order 101 -src "http://yui.yahooapis.com/2.5.1/build/utilities/utilities.js"
+    template::head::add_javascript -order 102 -src "http://yui.yahooapis.com/2.5.1/build/autocomplete/autocomplete-min.js"
+    template::head::add_javascript -order 103 -src "/resources/ajaxhelper/ext2/adapter/yui/ext-yui-adapter.js"
+    template::head::add_javascript -order 104 -src "/resources/ajaxhelper/ext2/ext-all.js"
+    template::head::add_javascript -order 105 -src "/resources/ajax-filestorage-ui/swfupload/swfupload.js"
+    if { $debug } {
+        template::head::add_javascript -order 106 -src "/resources/ajax-filestorage-ui/ajaxfs.js"
+    } else {
+        template::head::add_javascript -order 106 -src "/resources/ajax-filestorage-ui/ajaxfs-min.js"
+    }
+}
+
+
 if { [exists_and_not_null package_id] } {
 
     set options [list]

@@ -97,8 +97,11 @@ if { [exists_and_not_null tag_id] } {
 
 db_multirow -extend { filename icon last_modified_pretty content_size_pretty download_url linkurl object_counter file_list_start file_list_end write_p tags symlink_id qtip} contents $query_name $query  {
 
-    # c/o Franz Penz
+    # cleanup :
+    # remove double quotes, replace with single quotes
     regsub -all {"} $title {\"} title 
+    regsub -all {"} $name {\"} name
+    regsub -all {"} $filename {\"} filename
 
     set symlink_id ""
     set qtip ${title}
@@ -201,21 +204,18 @@ db_multirow -extend { filename icon last_modified_pretty content_size_pretty dow
         }
     }
 
-    # cleanup :
-    # remove double quotes, replace with single quotes
-    regsub  -all "\"" $title "" title
-
     # filename and download url
 
     if { $type != "folder" && $type != "symlink"} {
 
         if { ![exists_and_not_null download_url] } {
-            set download_url "${fs_url}download/${name}?[export_vars {{file_id $object_id}}]"
+            set download_url "${fs_url}download/[ad_urlencode ${title}]?[export_vars {{file_id $object_id}}]"
             set linkurl "${fs_url}download/?[export_vars {{file_id $object_id}}]"
         }
 
         set filename $name
         if { $title == $name } { set filename " "}
+
     } else {
 
         set download_url "javascript:void(0)"
@@ -226,7 +226,7 @@ db_multirow -extend { filename icon last_modified_pretty content_size_pretty dow
     # get the tags for this fs item
     set tag_list [db_list "get_categories" "select name from category_translations where locale='en_US' and category_id in (select category_id from category_object_map where object_id=:object_id)"]
     if { [llength $tag_list] >0 } {
-        set tags [join $tag_list ","]
+        regsub -all {"} [join $tag_list ","] {\"} tags
     } else {
         set tags ""
     }

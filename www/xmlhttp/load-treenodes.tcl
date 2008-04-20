@@ -23,7 +23,7 @@ if { ![exists_and_not_null node] } {
     set node [fs::get_root_folder -package_id $package_id]
 }
 
-db_multirow -extend { text id  href cls qtip symlink_id content_size_pretty } "treenodes" "treenodes" { } {
+db_multirow -extend { text id  href cls qtip symlink_id content_size_pretty leaf expanded children } "treenodes" "treenodes" { } {
 
     if { [exists_and_not_null title] } {
         set text $title
@@ -34,8 +34,20 @@ db_multirow -extend { text id  href cls qtip symlink_id content_size_pretty } "t
     set symlink_id ""
     set id "$object_id"
     set cls "folder"
+    set children ""
+    set leaf "false"
+    set expanded "false"
     
     set content_size_pretty [lc_numeric $content_size]
+
+    if { $content_size_pretty == 0 } {
+
+        set leaf "true"
+        set expanded "true"
+        set children ",\"children\":\[\]"
+
+    }
+
     append content_size_pretty " [_ file-storage.items]"
 
     if { $type == "symlink" } {
