@@ -85,5 +85,7 @@ db_multirow -extend { text id  href cls qtip symlink_id content_size_pretty leaf
 
     # c/o Franz Penz
     regsub -all {"} $qtip {\"} qtip
+    regsub -all {"} $name {\"} name
+
 
 }
