@@ -97,7 +97,9 @@
             file_description: "#ajax-filestorage-ui.Description#",
             multiple_files: "#ajax-filestorage-ui.MultipleFiles#",
             multiple_files_msg: "#ajax-filestorage-ui.ThisIsAZip#",
-            download_archive: "#ajax-filestorage-ui.DownloadArchive#"
+            download_archive: "#ajax-filestorage-ui.DownloadArchive#",
+            request_notification:"#notifications.lt_You_may_a_hrefsub_url#",
+            unsubscribe_notification:"#notifications.lt_You_have_requested_no#"
     }
     Ext.onReady(function() { 
         Ext.get("@layoutdiv;noquote@").setHeight(400,false);

@@ -222,6 +222,7 @@ ajaxfs.prototype = {
 
         var menu = new Ext.menu.Menu({
             id: 'toolsmenu',
+            shadow:false,
             items: [
             new Ext.menu.Item({
                 id:'mnOpen',
@@ -267,7 +268,13 @@ ajaxfs.prototype = {
                 id:'mnShare',
                 text: acs_lang_text.sharefolder || 'Share Folder',
                 icon: '/resources/ajaxhelper/icons/group_link.png'
-            }) ]
+            }),
+            new Ext.menu.Item({
+                id:'mnNotif',
+                text: acs_lang_text.request_notification || 'Request Notification',
+                icon: '/resources/ajaxhelper/icons/email.png'
+            })
+            ]
         });
 
         menu.on("beforeshow",function() {
@@ -290,6 +297,23 @@ ajaxfs.prototype = {
                 menu.items.items[6].disable();
                 menu.items.items[8].disable();
 
+                //check if the user is subscribed to this folder
+                Ext.Ajax.request({
+                    url:this.xmlhttpurl+"notif_p",
+                    success: function(o) {
+                        if(parseInt(o.responseText)) {
+                            menu.items.items[9].setText(acs_lang_text.unsubscribe_notification || 'Unsubscribe');
+                        } else {
+                            menu.items.items[9].setText(acs_lang_text.request_notification || 'Request Notification');
+                        }
+                    }, failure: function(response) {
+                        // presume user is not subscribed
+                        menu.items.items[9].setText(acs_lang_text.request_notification || 'Request Notification');
+                    }, params: { object_id:treepanel.getSelectionModel().getSelectedNode().attributes["id"] }
+                });
+
+                menu.items.items[9].enable();
+
                 // always disable views if views package is not installed
                 if(!this.views_p) {
                     menu.items.items[2].disable();
@@ -300,33 +324,53 @@ ajaxfs.prototype = {
                 if (gridpanel.getSelectionModel().getCount() == 1) {
     
                     var selectedRow = gridpanel.getSelectionModel().getSelections();
-    
+
                     for(var x=0; x<menu.items.items.length;x++) {
                         menu.items.items[x].enable();
                     }
-    
+
+                    menu.items.items[9].setText(acs_lang_text.request_notification || 'Request Notification');
+
                     switch (selectedRow[0].get("type"))  {
                         case "folder":
                             menu.items.items[0].setText("Open");
                             menu.items.items[1].disable();
                             menu.items.items[6].disable();
+                            //check if the user is subscribed to this folder
+                            Ext.Ajax.request({
+                                url:this.xmlhttpurl+"notif_p",
+                                success: function(o) {
+                                    if(parseInt(o.responseText)) {
+                                        menu.items.items[9].setText(acs_lang_text.unsubscribe_notification ||'Unsubscribe');
+                                    } else {
+                                        menu.items.items[9].setText(acs_lang_text.request_notification ||'Request Notification');
+                                    }
+                                }, failure: function(response) {
+                                    // presume user is not subscribed
+                                    menu.items.items[9].setText(acs_lang_text.request_notification || 'Request Notification');
+                                }, params: { object_id:treepanel.getSelectionModel().getSelectedNode().attributes["id"] }
+                            });
+                            menu.items.items[9].enable();
                             break;
                         case "symlink":
                             menu.items.items[0].setText("Open");
                             menu.items.items[1].disable();
                             menu.items.items[3].disable();
                             menu.items.items[6].disable();
+                            menu.items.items[9].disable();
                             break;
                         case "url" :
                             menu.items.items[0].setText("Open");
                             menu.items.items[6].disable();
                             menu.items.items[7].disable();
                             menu.items.items[8].disable();
+                            menu.items.items[9].disable();
                             break;
                         default :
                             menu.items.items[0].setText("Download");
                             menu.items.items[7].disable();
                             menu.items.items[8].disable();
+                            menu.items.items[9].disable();
                             break;
                     }
     
@@ -403,6 +447,9 @@ ajaxfs.prototype = {
                     break;
                 case "mnShare":
                     this.showShareOptions(panel, i);
+                    break;
+                case "mnNotif":
+                    this.redirectNotifs(panel, i);
                     break;
             }
 
@@ -565,7 +612,7 @@ ajaxfs.prototype = {
             
                     Ext.Ajax.request({
                         url:this.xmlhttpurl+"move-fsitem",
-                        success: moveSuccess, failure: function() {
+                        success: moveSuccess, failure: function(response) {
                             var resultObj = Ext.decode(response.responseText);
                             var msg = "";
                             if(resultObj.error) { msg = resultObj.error }
@@ -1795,13 +1842,12 @@ ajaxfs.prototype = {
         window.focus();
     },
 
-
     // redirect to permissions
     redirectPerms : function(panel,i,e) {
 
         if(panel.id == "filepanel") {
 
-            var filepanel = grid;
+            var filepanel = panel;
             var node = filepanel.store.getAt(i);
             var object_id = node.get("id");
 
@@ -1813,8 +1859,30 @@ ajaxfs.prototype = {
 
         var newwindow = window.open(window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"permissions?object_id="+object_id+"&return_url="+window.location.pathname+"?package_id="+this.config.package_id+"&folder_id="+this.currentfolder);
         newwindow.focus();
+
     },
 
+    // redirect to subscribe to notifications
+    redirectNotifs : function(panel,i,e) {
+
+        if(panel.id == "filepanel") {
+
+            var filepanel = panel;
+            var node = filepanel.store.getAt(i);
+            var object_id = node.get("id");
+            var pretty_name = node.get("title");
+
+        } else {
+
+            var treepanel = panel;
+            var node = treepanel.getSelectionModel().getSelectedNode();
+            var object_id = node.attributes["id"];
+            var pretty_name = node.text;
+        }
+
+        window.location.href=this.xmlhttpurl+"notif-toggle?pretty_name="+pretty_name+"&object_id="+object_id+"&return_url="+this.config.package_url+"?folder_id="+this.currentfolder;
+
+    },
 
     // redirect to file properties
     redirectProperties : function(grid,i,e) {
