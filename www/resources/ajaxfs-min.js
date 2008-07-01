@@ -566,7 +566,11 @@ if(_8c.attributes["id"]==_8f.attributes["id"]){
 Ext.Msg.alert(acs_lang_text.alert||"Alert",acs_lang_text.cant_del_root||"The root folder can not be deleted.");
 return;
 }else{
+if(typeof (_8c.attributes.attributes["size"])=="undefined"){
+var msg="";
+}else{
 var msg=_82+" <b>"+_8c.attributes.attributes["size"]+"</b>.<br>";
+}
 msg=msg+_81+" <b>"+_8c.attributes["text"]+"</b>?";
 }
 }

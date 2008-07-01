@@ -1110,7 +1110,11 @@ ajaxfs.prototype = {
                 return;
             } else {
                 // confirmation message
-                var msg = err_msg_txt2 + " <b>"+selectednode.attributes.attributes["size"]+"</b>.<br>";
+                if(typeof(selectednode.attributes.attributes["size"]) == "undefined") {
+                    var msg = "";
+                } else {
+                    var msg = err_msg_txt2 + " <b>"+selectednode.attributes.attributes["size"]+"</b>.<br>";
+                }
                 msg = msg + err_msg_txt+' <b>'+selectednode.attributes["text"]+'</b>?';
             }
 

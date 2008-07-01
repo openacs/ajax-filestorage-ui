@@ -37,16 +37,14 @@ db_multirow -extend { text id  href cls qtip symlink_id content_size_pretty leaf
     set children ""
     set leaf "false"
     set expanded "false"
-    
+
     set content_size_pretty [lc_numeric $content_size]
 
-    if { $content_size_pretty == 0 } {
-
-        set leaf "true"
-        set expanded "true"
-        set children ",\"children\":\[\]"
-
-    }
+    #if { $content_size_pretty == 0 } {
+    #        set leaf "true"
+    #        set expanded "true"
+    #        set children ",\"children\":\[\]"
+    # }
 
     append content_size_pretty " [_ file-storage.items]"
 
@@ -83,7 +81,6 @@ db_multirow -extend { text id  href cls qtip symlink_id content_size_pretty leaf
         }
     }
 
-    # c/o Franz Penz
     regsub -all {"} $qtip {\"} qtip
     regsub -all {"} $name {\"} name
 
