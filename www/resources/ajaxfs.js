@@ -226,17 +226,17 @@ ajaxfs.prototype = {
             items: [
             new Ext.menu.Item({
                 id:'mnOpen',
-                text: 'Open',
+                text: acs_lang_text.open || 'Open',
                 icon: '/resources/ajaxhelper/icons/page_white.png'
             }),
             new Ext.menu.Item({
                 id:'mnTag',
-                text: 'Tag',
+                text: acs_lang_text.tag || 'Tag',
                 icon: '/resources/ajaxhelper/icons/tag_blue.png'
             }),
             new Ext.menu.Item({
                 id:'mnView',
-                text: 'Views',
+                text: acs_lang_text.views || 'Views',
                 icon: '/resources/ajaxhelper/icons/camera.png'
             }),
             new Ext.menu.Item({
@@ -291,7 +291,7 @@ ajaxfs.prototype = {
                     menu.items.items[x].enable();
                 }
 
-                menu.items.items[0].setText("Open");
+                menu.items.items[0].setText(acs_lang_text.open || 'Open');
                 menu.items.items[0].disable();
                 menu.items.items[1].disable();
                 menu.items.items[6].disable();
@@ -333,7 +333,7 @@ ajaxfs.prototype = {
 
                     switch (selectedRow[0].get("type"))  {
                         case "folder":
-                            menu.items.items[0].setText("Open");
+                            menu.items.items[0].setText(acs_lang_text.open || 'Open');
                             menu.items.items[1].disable();
                             menu.items.items[6].disable();
                             //check if the user is subscribed to this folder
@@ -353,21 +353,21 @@ ajaxfs.prototype = {
                             menu.items.items[9].enable();
                             break;
                         case "symlink":
-                            menu.items.items[0].setText("Open");
+                            menu.items.items[0].setText(acs_lang_text.open || 'Open');
                             menu.items.items[1].disable();
                             menu.items.items[3].disable();
                             menu.items.items[6].disable();
                             menu.items.items[9].disable();
                             break;
                         case "url" :
-                            menu.items.items[0].setText("Open");
+                            menu.items.items[0].setText(acs_lang_text.open || 'Open');
                             menu.items.items[6].disable();
                             menu.items.items[7].disable();
                             menu.items.items[8].disable();
                             menu.items.items[9].disable();
                             break;
                         default :
-                            menu.items.items[0].setText("Download");
+                            menu.items.items[0].setText(acs_lang_text.download || 'Download');
                             menu.items.items[7].disable();
                             menu.items.items[8].disable();
                             menu.items.items[9].disable();
@@ -1348,7 +1348,7 @@ ajaxfs.prototype = {
                 var msg4=acs_lang_text.multiple_files || "Multiple Files";
                 var msg5=acs_lang_text.multiple_files_msg || "This is a ZIPfile containing multiple files.";
                 var modal = true;
-                var title = "Upload a File";
+                var title = acs_lang_text.uploadfile || "Upload a File";
 
                 var uploadBody = new Ext.Panel({
                     id:'form_addfile',
@@ -1357,12 +1357,12 @@ ajaxfs.prototype = {
                     html: "<form id=\"newfileform\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"package_id\" value=\""+this.config.package_id+"\"><input type=\"hidden\" name=\"folder_id\" value=\""+this.currentfolder+"\"><p>"+msg1+"<br /><input type=\"file\" name=\"upload_file\" id=\"upload_file\"></p><br><p>"+msg2+"<br /><input type=\"text\" name=\"filetitle\" id=\"filetitle\"></p><br><p>"+msg3+" :<br /><textarea name=\"filedescription\" id=\"filedescription\"></textarea></p><p>"+msg4+" :<br /><br /><input type=\"checkbox\" name=\"unpack_p\" value=\"t\" id=\"unpack_p\" /> "+msg5+"</p></form>"
                 });
                 var uploadBtns = [{
-                        text: 'Upload',
+                        text: acs_lang_text.upload || 'Upload',
                         handler: this.uploadOneFile.createDelegate(this),
                         icon:"/resources/ajaxhelper/icons/arrow_up.png",
                         cls:"x-btn-text-icon"
                     },{
-                        text: 'Close',
+                        text: acs_lang_text.close || 'Close',
                         handler: function(){
                             this.upldWindow.hide();
                         }.createDelegate(this),

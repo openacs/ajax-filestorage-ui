@@ -40,11 +40,14 @@
   <msg key="PermissionDenied">Permission Denied</msg>
   <msg key="Properties">Properties</msg>
   <msg key="SessionExpired">Your session has expired. You need to login again. &lt;br&gt;You will be redirected to a login page shortly</msg>
+  <msg key="Tag">Tag</msg>
   <msg key="ThisIsAZip">This is a ZIP file containing multiple files.</msg>
   <msg key="Title">Title</msg>
   <msg key="TitleAndFileRequired">&lt;b&gt;Title&lt;/b&gt; and &lt;b&gt;File to upload&lt;/b&gt; are required.</msg>
+  <msg key="Tools">Tools</msg>
   <msg key="UploadFailed">Upload failed, please try again later.</msg>
   <msg key="UploadFileIntro">Click &lt;b&gt;Browse&lt;/b&gt; to select a file to upload to the selected folder.</msg>
   <msg key="Uploading">Uploading ...</msg>
+  <msg key="Views">Views</msg>
   <msg key="Zip_file">Zip File (Will be extracted after upload)</msg>
 </message_catalog>

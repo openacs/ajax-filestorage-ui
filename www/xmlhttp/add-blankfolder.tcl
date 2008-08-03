@@ -31,7 +31,7 @@ if { ![permission::permission_p -no_cache \
 }
 
 set description ""
-set pretty_folder_name "New Folder"
+set pretty_folder_name "#file-storage.New_Folder#"
 set folder_name [string tolower [util_text_to_url -text $pretty_folder_name]]
 set file_exists_count [db_string "count_existing" "select count(*) from cr_items where name like '$folder_name%' and parent_id=:folder_id"]
 if { $file_exists_count != 0 } {

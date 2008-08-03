@@ -52,6 +52,7 @@
             permissions:"#file-storage.Permissions#",
             linkaddress:"#ajax-filestorage-ui.CopyLink#",
             upload: "#file-storage.Upload#",
+            open:"#acs-kernel.common_Open#",
             cancel: "#ajax-filestorage-ui.Cancel#",
             close: "#ajax-filestorage-ui.Close#",
             browse: "#ajax-filestorage-ui.Browse#",
@@ -97,9 +98,13 @@
             file_description: "#ajax-filestorage-ui.Description#",
             multiple_files: "#ajax-filestorage-ui.MultipleFiles#",
             multiple_files_msg: "#ajax-filestorage-ui.ThisIsAZip#",
+            download:"#file-storage.Download#",
             download_archive: "#ajax-filestorage-ui.DownloadArchive#",
             request_notification:"#notifications.lt_You_may_a_hrefsub_url#",
-            unsubscribe_notification:"#notifications.lt_You_have_requested_no#"
+            unsubscribe_notification:"#notifications.lt_You_have_requested_no#",
+            tools:"#ajax-filestorage-ui.Tools#",
+            tag:"#ajax-filestorage-ui.Tag#",
+            views:"#ajax-filestorage-ui.Views#"
     }
     Ext.onReady(function() { 
         Ext.get("@layoutdiv;noquote@").setHeight(400,false);
