@@ -100,8 +100,8 @@
             multiple_files_msg: "#ajax-filestorage-ui.ThisIsAZip#",
             download:"#file-storage.Download#",
             download_archive: "#ajax-filestorage-ui.DownloadArchive#",
-            request_notification:"#notifications.lt_You_may_a_hrefsub_url#",
-            unsubscribe_notification:"#notifications.lt_You_have_requested_no#",
+            request_notification:'@subscribe_link',
+            unsubscribe_notification:'@unsubscribe_link',
             tools:"#ajax-filestorage-ui.Tools#",
             tag:"#ajax-filestorage-ui.Tag#",
             views:"#ajax-filestorage-ui.Views#"

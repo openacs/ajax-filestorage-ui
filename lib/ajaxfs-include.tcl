@@ -126,3 +126,10 @@ if { [exists_and_not_null package_id] } {
     ad_script_abort
 
 }
+
+
+foreach {subscribe_url unsubscribe_url} [notification::display::get_urls -type "fs_fs_notif_type" -object_id $folder_id -pretty_name $instance_name] {break}
+
+set unsubscribe_link [_ notifications.lt_You_have_requested_no [list pretty_name $instance_name sub_url $unsubscribe_url]]
+
+set subscribe_link [_ notifications.lt_You_may_a_hrefsub_url [list pretty_name $instance_name sub_url $subscribe_url]]

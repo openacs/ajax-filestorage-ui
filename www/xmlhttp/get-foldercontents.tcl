@@ -33,6 +33,7 @@ set fs_url [apm_package_url_from_id $root_package_id]
 if {![exists_and_not_null fs_url]} {  set fs_url "" }
 
 set folder_path ""
+set categories_limitation ""
 if {![string equal $root_folder_id $folder_id]} {
     set folder_path [db_exec_plsql dbqd.file-storage.www.folder-chunk.get_folder_path {}]
 }
