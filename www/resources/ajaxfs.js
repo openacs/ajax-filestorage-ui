@@ -1338,7 +1338,7 @@ ajaxfs.prototype = {
 
         if(this.upldWindow == null) {
 
-            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || Ext.isLinux) {
+            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || checkFlashVersion() == 10 || Ext.isLinux) {
 
                 /*** Single File Upload *******/
 
@@ -1426,7 +1426,7 @@ ajaxfs.prototype = {
             });
 
         } else {
-            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || Ext.isLinux) {
+            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || checkFlashVersion() == 10 || Ext.isLinux) {
                 document.getElementById('newfileform').folder_id.value = this.currentfolder;
             }
         }

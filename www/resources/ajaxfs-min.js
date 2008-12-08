@@ -745,7 +745,7 @@ this.swfu=new SWFUpload({debug:false,upload_target_url:this.xmlhttpurl+"add-file
 }
 },addFile:function(){
 if(this.upldWindow==null){
-if(!this.config.multi_file_upload||checkFlashVersion()<9||Ext.isLinux){
+if(!this.config.multi_file_upload||checkFlashVersion()<9||checkFlashVersion()==10||Ext.isLinux){
 var _c2=acs_lang_text.file_to_upload||"File to upload";
 var _c3=acs_lang_text.file_title||"Title";
 var _c4=acs_lang_text.file_description||"Description";
@@ -772,7 +772,7 @@ this.upldWindow.hide();
 }
 this.upldWindow=new Ext.Window({id:"upload-win",layout:"fit",width:400,height:300,title:_c8,closeAction:"hide",modal:_c7,plain:true,resizable:false,items:_c9,buttons:_ca});
 }else{
-if(!this.config.multi_file_upload||checkFlashVersion()<9||Ext.isLinux){
+if(!this.config.multi_file_upload||checkFlashVersion()<9||checkFlashVersion()==10||Ext.isLinux){
 document.getElementById("newfileform").folder_id.value=this.currentfolder;
 }
 }
