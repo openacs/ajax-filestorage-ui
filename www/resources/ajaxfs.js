@@ -1427,6 +1427,7 @@ ajaxfs.prototype = {
 
         } else {
             if (!this.config.multi_file_upload || checkFlashVersion() < 9 || checkFlashVersion() == 10 || Ext.isLinux) {
+                document.getElementById('newfileform').reset();
                 document.getElementById('newfileform').folder_id.value = this.currentfolder;
             }
         }
