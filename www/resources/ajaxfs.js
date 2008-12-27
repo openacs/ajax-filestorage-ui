@@ -64,30 +64,32 @@ fsCore.prototype = {
 
     doAction : function(action,successFn, failureFn, callbackFn, paramsObj, scope) {
 
+        var url = null;
+
         switch(action) {
             case 'checknotif':
-                var url = this.xmlhttpurl+"notif_p";
+                url = this.xmlhttpurl+"notif_p";
             break;
             case 'addfolder':
-                var url = this.xmlhttpurl+"add-blankfolder";
+                url = this.xmlhttpurl+"add-blankfolder";
             break;
             case 'delete':
-                var url = this.xmlhttpurl+"delete-fsitem";
+                url = this.xmlhttpurl+"delete-fsitem";
             break;
             case 'delete-revision':
-                var url = this.xmlhttpurl+"delete-fileversion"
+                url = this.xmlhttpurl+"delete-fileversion"
             break;
             case 'move':
-                var url = this.xmlhttpurl+"move-fsitem";
+                url = this.xmlhttpurl+"move-fsitem";
             break;
             case 'rename':
-                var url = this.xmlhttpurl+"rename-fsitem";
+                url = this.xmlhttpurl+"rename-fsitem";
             break;
             case 'tag':
-                var url = this.xmlhttpurl+"add-tag";
+                url = this.xmlhttpurl+"add-tag";
             break;
             case 'sharefolder':
-                var url = this.xmlhttpurl+"share-folder";
+                url = this.xmlhttpurl+"share-folder";
             break;
         }
 
@@ -1342,7 +1344,7 @@ ajaxfs.prototype = {
             }
 
             var fileQueueError = function(file, errorCode, message) {
-                console.log('file queue error')
+                // console.log('file queue error')
                 try {
                     if (errorCode === SWFUpload.QUEUE_ERROR.QUEUE_LIMIT_EXCEEDED) {
                         alert("You have attempted to queue too many files.\n" + (message === 0 ? "You have reached the upload limit." : "You may select " + (message > 1 ? "up to " + message + " files." : "one file.")));
@@ -1386,7 +1388,7 @@ ajaxfs.prototype = {
             }
 
             var uploadStart = function (fileObj) {
-                console.log('upload start')
+                // console.log('upload start')
                 var upload_txt = acs_lang_text.for_upload_to || "for upload to";
                 var zip_txt = acs_lang_text.zip_extracted || "Zip File (Will be extracted after upload)";
                 try {
@@ -1402,7 +1404,7 @@ ajaxfs.prototype = {
             }
 
             var uploadProgress = function (fileObj, bytesLoaded, bytesTotal) {
-                console.log('upload progress')
+                // console.log('upload progress')
                 try {
                     var percent = Math.ceil((bytesLoaded / bytesTotal) * 100);
                     var progress = new FileProgress(fileObj, progress_target);
@@ -1414,13 +1416,13 @@ ajaxfs.prototype = {
             }
 
             var uploadQueueComplete = function() {
-                console.log('upload queue complete')
+                // console.log('upload queue complete')
                 var currentTreeNode = treepanel.getNodeById(ajaxfsobj.currentfolder);
                 currentTreeNode.fireEvent("click",currentTreeNode);
             }
 
             var uploadError = function(file, errorCode, message) {
-                console.log('upload error')
+                // console.log('upload error')
                 try {
                     var progress = new FileProgress(file, progress_target);
                     progress.setError();
@@ -1477,7 +1479,7 @@ ajaxfs.prototype = {
             }
 
             var uploadSuccess = function(fileObj,serverData) {
-                console.log('upload success')
+                // console.log('upload success')
                 try {
                     var progress = new FileProgress(fileObj, progress_target);
                     progress.SetComplete();
@@ -1493,6 +1495,7 @@ ajaxfs.prototype = {
                 post_params: {user_id:user_id,package_id:package_id},
                 file_types : "*.*",
                 button_placeholder_id:"btnSwfUpload",
+                button_image_url : "/resources/ajax-filestorage-ui/resources/FullyTransparent_65x29.png",
                 button_text:'&nbsp;<b>BROWSE</b>',
                 button_width: 61,
                 button_height: 16,
@@ -1506,7 +1509,7 @@ ajaxfs.prototype = {
                 upload_success_handler : uploadSuccess,
                 queue_complete_handler : uploadQueueComplete,
                 upload_url: this.xmlhttpurl + "add-file-flash",
-                flash_url : "/resources/ajax-filestorage-ui/swfupload2/swfupload.swf"
+                flash_url : "/resources/ajax-filestorage-ui/swfupload/swfupload.swf"
             });
 
         }
