@@ -565,7 +565,7 @@ ajaxfs.prototype = {
             toolbar.push(this.createToolsMenu());
             toolbar.push('->');
         }
-        toolbar.push({tooltip: 'This may take a few minutes if you have a lot of files', text: acs_lang_text.download_archive || 'Download Archive', icon: '/resources/ajaxhelper/icons/arrow_down.png', cls : 'x-btn-text-icon', scope:this, handler: function() { this.downloadArchive.(rootnode.id) } });
+        toolbar.push({tooltip: 'This may take a few minutes if you have a lot of files', text: acs_lang_text.download_archive || 'Download Archive', icon: '/resources/ajaxhelper/icons/arrow_down.png', cls : 'x-btn-text-icon', scope:this, handler: function() { this.downloadArchive(rootnode.id) } });
         return toolbar;
     },
 
@@ -1143,7 +1143,7 @@ ajaxfs.prototype = {
     delItem : function(grid,i,e) {
 
         var err_msg_txt = acs_lang_text.confirm_delete || "Are you sure you want to delete ";
-        var err_msg_txt2 = acs_lang_text.foldercontains || "This folder contains";
+        var err_msg_txt2 = acs_lang_text.foldercontains || "This folder ";
         var treepanel = this.layout.findById('treepanel');
         if(grid.id=="filepanel") { 
             var filepanel = grid;
@@ -1167,9 +1167,9 @@ ajaxfs.prototype = {
             if (selectedRows.length == 1) {
                 var filetodel = selectedRows[0].get("title");
                 if(selectedRows[0].get("type") === "folder") {
-                    var msg = err_msg_txt2 + " <b>"+selectedRows[0].get("size")+"</b>.<br>"
+                    var msg = err_msg_txt2 + "contains <b>"+selectedRows[0].get("size")+"</b>.<br>"
                 } else {
-                    var msg = "";
+                    var msg = "is empty";
                 }
                 var msg = msg + err_msg_txt+" <b>"+filetodel+"</b> ?";
                 if(selectedRows[0].get("type") === "symlink") {
@@ -1218,9 +1218,9 @@ ajaxfs.prototype = {
             } else {
                 // confirmation message
                 if(typeof(selectednode.attributes.attributes["size"]) == "undefined") {
-                    var msg = "";
+                    var msg = " is empty";
                 } else {
-                    var msg = err_msg_txt2 + " <b>"+selectednode.attributes.attributes["size"]+"</b>.<br>";
+                    var msg = err_msg_txt2 + " contains <b>"+selectednode.attributes.attributes["size"]+"</b>.<br>";
                 }
                 msg = msg + err_msg_txt+' <b>'+selectednode.attributes["text"]+'</b>?';
             }
@@ -1232,8 +1232,8 @@ ajaxfs.prototype = {
             if(resultobj.success) {
                 if(delfromtree) {
                     var selectednode = treepanel.getSelectionModel().getSelectedNode();
-                    var parentnode = selectednode.parentnode;
-                    parentnode.fireEevent("click",parentnode);
+                    var parentnode = selectednode.parentNode;
+                    parentnode.fireEvent("click",parentnode);
                     parentnode.removeChild(selectednode);
                 } else {
                     for(var x=0; x<selectedRows.length; x++) {
@@ -1243,8 +1243,9 @@ ajaxfs.prototype = {
                         var treenodeid = selectedRows[x].get("id");
                         var selectednode = treepanel.getNodeById(treenodeid);
                         if (selectednode) {
-                            selectednode.parentnode.fireEevent("click",selectednode.parentnode);
-                            selectednode.parentnode.removeChild(selectednode);
+                            var parentnode = selectednode.parentNode;
+                            parentnode.fireEevent("click",parentnode);
+                            parentnode.removeChild(selectednode);
                         }
                     }
                 }
@@ -1285,7 +1286,7 @@ ajaxfs.prototype = {
             var resultObj = Ext.decode(response.responseText);
             if (resultObj.success) {
                 // create a new blank node on the currently selected one
-                var newnode = currentTreeNode.appendChild(new Ext.tree.TreeNode({text:resultObj.pretty_folder_name,id:resultObj.id,iconCls:"folder",singleClickExpand:true,attributes:{write_p:'t',size:'',type:'folder',symlink_id:''}}));
+                var newnode = currentTreeNode.appendChild(new Ext.tree.TreeNode({text:resultObj.pretty_folder_name,id:resultObj.id,iconCls:"folder",singleClickExpand:true,attributes:{write_p:'t',size:'0 items',type:'folder',symlink_id:''}}));
                 tree.getSelectionModel().select(newnode);
                 newnode.loaded=true;
                 newnode.fireEvent("click",newnode);
