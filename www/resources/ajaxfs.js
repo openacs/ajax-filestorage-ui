@@ -1169,7 +1169,7 @@ ajaxfs.prototype = {
                 if(selectedRows[0].get("type") === "folder") {
                     var msg = err_msg_txt2 + "contains <b>"+selectedRows[0].get("size")+"</b>.<br>"
                 } else {
-                    var msg = "is empty";
+                    var msg = "";
                 }
                 var msg = msg + err_msg_txt+" <b>"+filetodel+"</b> ?";
                 if(selectedRows[0].get("type") === "symlink") {
@@ -1218,7 +1218,7 @@ ajaxfs.prototype = {
             } else {
                 // confirmation message
                 if(typeof(selectednode.attributes.attributes["size"]) == "undefined") {
-                    var msg = " is empty";
+                    var msg = "";
                 } else {
                     var msg = err_msg_txt2 + " contains <b>"+selectednode.attributes.attributes["size"]+"</b>.<br>";
                 }
