@@ -3,13 +3,18 @@
     <if @theme@ not nil>
         <link rel="stylesheet" type="text/css" href="/resources/ajaxhelper/ext2/resources/css/xtheme-@theme@.css">
     </if>
-    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.5.1/build/autocomplete/assets/skins/sam/autocomplete.css" />
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.6.0/build/autocomplete/assets/skins/sam/autocomplete.css" />
     <link rel="stylesheet" type="text/css" href="/resources/ajax-filestorage-ui/ajaxfs.css">
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.5.1/build/utilities/utilities.js"></script>
-    <script type="text/javascript" src="http://yui.yahooapis.com/2.5.1/build/autocomplete/autocomplete-min.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.6.0/build/utilities/utilities.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.6.0/build/datasource/datasource-min.js"></script> 
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.6.0/build/autocomplete/autocomplete-min.js"></script>
     <script type="text/javascript" src="/resources/ajaxhelper/ext2/adapter/yui/ext-yui-adapter.js"></script>
     <script type="text/javascript" src="/resources/ajaxhelper/ext2/ext-all.js"></script>
     <script type="text/javascript" src="/resources/ajax-filestorage-ui/swfupload/swfupload.js"></script>
+    <script type="text/javascript" src="/resources/ajax-filestorage-ui/swfupload/swfupload.queue.js"></script>
+    <script type="text/javascript" src="/resources/ajax-filestorage-ui/swfupload/fileprogress.js"></script>
+    <script type="text/javascript" src="/resources/ajax-filestorage-ui/utils.js"></script>
+
     <if @debug@ eq 1>
         <script type="text/javascript" src="/resources/ajax-filestorage-ui/ajaxfs.js"></script>
     </if>

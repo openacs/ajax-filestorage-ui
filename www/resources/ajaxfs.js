@@ -5,16 +5,120 @@
 
 */
 
-/********** AJAXFS Class ***********/
-
+Ext.namespace('fsCore');
 Ext.namespace('ajaxfs');
 Ext.BLANK_IMAGE_URL = '/resources/ajaxhelper/ext2/resources/images/default/s.gif';
 
+/******** File Storage Core Functions ***********/
+
+fsCore = function(package_id,xmlhttpurl) {
+
+    this.package_id=package_id;
+    this.xmlhttpurl=xmlhttpurl;
+
+}
+
+fsCore.prototype = {
+
+    // the tree loader used to fill up the folder panel
+
+    createTreeLoader : function() {
+        var treeloader = new Ext.tree.TreeLoader({ 
+            dataUrl:this.xmlhttpurl+'load-treenodes',
+            baseParams: { package_id:this.package_id }
+        })
+        return treeloader
+    },
+
+    // the httpproxy that fetches the content of a folder
+    
+    createFilePanelProxy : function() {
+        var proxy = new Ext.data.HttpProxy( {
+            url : this.xmlhttpurl+ 'get-foldercontents'
+        } )
+        return proxy
+    },
+
+    // do a form submit for a given action
+    formSubmit : function(action, extform, waitmsg, params, reset, success, failure, scope) {
+
+        switch(action) {
+            case 'createurl':
+                var url = this.xmlhttpurl+"add-url"
+            break;
+        }
+
+        if (url) {
+            extform.submit({
+                url:url,
+                waitMsg:waitmsg,
+                params:params,
+                scope:scope,
+                success:success,
+                failure:failure
+            })
+        }
+    },
+
+    // executes the action thru an ajax call
+
+    doAction : function(action,successFn, failureFn, callbackFn, paramsObj, scope) {
+
+        switch(action) {
+            case 'checknotif':
+                var url = this.xmlhttpurl+"notif_p";
+            break;
+            case 'addfolder':
+                var url = this.xmlhttpurl+"add-blankfolder";
+            break;
+            case 'delete':
+                var url = this.xmlhttpurl+"delete-fsitem";
+            break;
+            case 'delete-revision':
+                var url = this.xmlhttpurl+"delete-fileversion"
+            break;
+            case 'move':
+                var url = this.xmlhttpurl+"move-fsitem";
+            break;
+            case 'rename':
+                var url = this.xmlhttpurl+"rename-fsitem";
+            break;
+            case 'tag':
+                var url = this.xmlhttpurl+"add-tag";
+            break;
+            case 'sharefolder':
+                var url = this.xmlhttpurl+"share-folder";
+            break;
+        }
+
+        if(url) {
+
+            var config = {
+                url:url,
+                success: successFn,
+                failure: failureFn,
+                params: paramsObj
+            }
+    
+            if(callbackFn) { config.callback = callbackFn }
+            if(successFn) { config.success = successFn }
+            if(failureFn) { config.failure = failureFn }
+            if(scope) { config.scope = scope }
+    
+            Ext.Ajax.request(config)
+
+        }
+
+    }
+
+}
+
+/********** AJAXFS Class *************************/
+
 ajaxfs = function(configObj) {
 
-    // ******** properties *********
+    // ******** configObj ***********
 
-    //  ** configObj **
     // ajaxFs expects a config object that may have the following properites
     // - configObj.package_id : the package_id of the current ajaxFs Instance
     // - configObj.initOpenFolder : if this value is not null, it should contain the folder id to open when object is instantiated
@@ -23,7 +127,11 @@ ajaxfs = function(configObj) {
     // - configObj.createUrl : do we show the createurl button in the toolbar
     // - configObj.sharefolders : do we implement folder sharing
 
-    // ** properties **
+    // ******** properties *********
+
+    // holds an object with configruation settings for this instance
+    //  of ajaxfs, this variable is set only if configObj exists and is passed
+    this.config = null;
 
     // url of xmlhttp files from ajaxfs, defaults to /ajaxfs/xmlhttp
     this.xmlhttpurl = '/ajaxfs/xmlhttp/';
@@ -34,14 +142,10 @@ ajaxfs = function(configObj) {
     // do we support folder sharing
     this.share_folders_p = true;
 
-    // holds an object with configruation settings for this instance
-    //  of ajaxfs, this variable is set only if configObj exists and is passed
-    this.config = null;
-
     // holds a reference to the layout for the center page
     this.layout = null;
     
-    // reference to the tree edito for the treepanel
+    // reference to the tree editor for the treepanel
     this.te = null;
 
     // holds the id of the currently selected node in the tree
@@ -91,7 +195,7 @@ ajaxfs = function(configObj) {
         if (typeof(Ext.DomHelper) != "undefined") {
 
             // ExtJs is loaded
-            // check for config
+            // process configObj
             if (configObj) { 
 
                 this.config = configObj;
@@ -114,14 +218,17 @@ ajaxfs = function(configObj) {
                 if(!this.config.ispublic) {
                     Ext.Ajax.on("requestcomplete", this.isSessionExpired, this);
                 }
-                
+
+                // instantiate the core object that allows us to work with the back-end
+                this.fsCore = new fsCore(this.config.package_id,this.xmlhttpurl);
+    
+                // initialize tooltips
+                Ext.QuickTips.init();
+    
+                // setup the layout and panels
+                this.initLayout();
+
             }
-
-            // initialize tooltips
-            Ext.QuickTips.init();
-
-            // setup the layout and panels
-            this.initLayout();
 
         }
 
@@ -220,104 +327,49 @@ ajaxfs.prototype = {
     // create a tools menu that has the same items as the context menu
     createToolsMenu : function() {
 
-        var menu = new Ext.menu.Menu({
-            id: 'toolsmenu',
-            shadow:false,
-            items: [
-            new Ext.menu.Item({
-                id:'mnOpen',
-                text: acs_lang_text.open || 'Open',
-                icon: '/resources/ajaxhelper/icons/page_white.png'
-            }),
-            new Ext.menu.Item({
-                id:'mnTag',
-                text: acs_lang_text.tag || 'Tag',
-                icon: '/resources/ajaxhelper/icons/tag_blue.png'
-            }),
-            new Ext.menu.Item({
-                id:'mnView',
-                text: acs_lang_text.views || 'Views',
-                icon: '/resources/ajaxhelper/icons/camera.png'
-            }),
-            new Ext.menu.Item({
-                id:'mnRename',
-                text: acs_lang_text.rename || 'Rename',
-                icon: '/resources/ajaxhelper/icons/page_edit.png'
-            }),
-            new Ext.menu.Item({
-                id:'mnCopyLink',
-                text: acs_lang_text.linkaddress || 'Copy Link Address',
-                icon: '/resources/ajaxhelper/icons/page_copy.png'
-            }), 
-            new Ext.menu.Item({
-                id:'mnPerms',
-                text: acs_lang_text.permissions || 'Permissions',
-                icon: '/resources/ajaxhelper/icons/group_key.png'
-            }), 
-            new Ext.menu.Item({
-                id:'mnProp',
-                text: acs_lang_text.properties || 'Properties',
-                icon: '/resources/ajaxhelper/icons/page_edit.png'
-            }), 
-            new Ext.menu.Item({
-                id:'mnArch',
-                text: acs_lang_text.download_archive || 'Download archive',
-                icon: '/resources/ajaxhelper/icons/arrow_down.png'
-            }),
-            new Ext.menu.Item({
-                id:'mnShare',
-                text: acs_lang_text.sharefolder || 'Share Folder',
-                icon: '/resources/ajaxhelper/icons/group_link.png'
-            }),
-            new Ext.menu.Item({
-                id:'mnNotif',
-                text: acs_lang_text.request_notification || 'Request Notification',
-                icon: '/resources/ajaxhelper/icons/email.png'
-            })
-            ]
-        });
-
-        menu.on("beforeshow",function() {
+        var beforeshow = function() {
 
             var gridpanel = this.layout.findById('filepanel');
             var treepanel = this.layout.findById('treepanel');
 
+            // allow use of this tool on the treepanel folders
+            // we want it to work on the tree if there are no files selected
+
             if (gridpanel.getSelectionModel().getCount() == 0) {
 
-                // no file from the grid has been selected
-                // allow use of this tool on the treepanel folders
+                // start by enabling all the tools menu items
 
                 for(var x=0; x<menu.items.items.length;x++) {
                     menu.items.items[x].enable();
                 }
 
-                menu.items.items[0].setText(acs_lang_text.open || 'Open');
-                menu.items.items[0].disable();
-                menu.items.items[1].disable();
-                menu.items.items[6].disable();
-                menu.items.items[8].disable();
+                // selectively disable
+
+                Ext.getCmp('mnOpen').setText(acs_lang_text.open || 'Open');
+                Ext.getCmp('mnOpen').disable();
+                Ext.getCmp('mnTag').disable();
+                Ext.getCmp('mnProp').disable();
+                Ext.getCmp('mnArch').disable();
+                Ext.getCmp('mnShare').disable();
 
                 //check if the user is subscribed to this folder
-                Ext.Ajax.request({
-                    url:this.xmlhttpurl+"notif_p",
-                    success: function(o) {
-                        if(parseInt(o.responseText)) {
-                            menu.items.items[9].setText(acs_lang_text.unsubscribe_notification || 'Unsubscribe');
-                        } else {
-                            menu.items.items[9].setText(acs_lang_text.request_notification || 'Request Notification');
-                        }
-                    }, failure: function(response) {
-                        // presume user is not subscribed
-                        menu.items.items[9].setText(acs_lang_text.request_notification || 'Request Notification');
-                    }, params: { object_id:treepanel.getSelectionModel().getSelectedNode().attributes["id"] }
-                });
 
-                menu.items.items[9].enable();
+                var success = function(o) {
+                    if(parseInt(o.responseText)) {
+                        Ext.getCmp('mnNotif').setText(acs_lang_text.unsubscribe_notification || 'Unsubscribe');
+                    } else {
+                        Ext.getCmp('mnNotif').setText(acs_lang_text.request_notification || 'Request Notification');
+                    }
+                } 
 
-                // always disable views if views package is not installed
-                if(!this.views_p) {
-                    menu.items.items[2].disable();
+                var failure = function(response) {
+                    // presume user is not subscribed
+                    Ext.getCmp('mnNotif').setText(acs_lang_text.request_notification || 'Request Notification');
                 }
+
+                this.fsCore.doAction('checknotif',success, failure, null,{ object_id:treepanel.getSelectionModel().getSelectedNode().attributes["id"] });
+
+                Ext.getCmp('mnNotif').enable();
 
             } else {
 
@@ -329,59 +381,57 @@ ajaxfs.prototype = {
                         menu.items.items[x].enable();
                     }
 
-                    menu.items.items[9].setText(acs_lang_text.request_notification || 'Request Notification');
+                    Ext.getCmp('mnNotif').setText(acs_lang_text.request_notification || 'Request Notification');
 
                     switch (selectedRow[0].get("type"))  {
                         case "folder":
-                            menu.items.items[0].setText(acs_lang_text.open || 'Open');
-                            menu.items.items[1].disable();
-                            menu.items.items[6].disable();
-                            //check if the user is subscribed to this folder
-                            Ext.Ajax.request({
-                                url:this.xmlhttpurl+"notif_p",
-                                success: function(o) {
-                                    if(parseInt(o.responseText)) {
-                                        menu.items.items[9].setText(acs_lang_text.unsubscribe_notification ||'Unsubscribe');
-                                    } else {
-                                        menu.items.items[9].setText(acs_lang_text.request_notification ||'Request Notification');
-                                    }
-                                }, failure: function(response) {
-                                    // presume user is not subscribed
-                                    menu.items.items[9].setText(acs_lang_text.request_notification || 'Request Notification');
-                                }, params: { object_id:treepanel.getSelectionModel().getSelectedNode().attributes["id"] }
-                            });
-                            menu.items.items[9].enable();
+
+                            Ext.getCmp('mnOpen').setText(acs_lang_text.open || 'Open');
+                            Ext.getCmp('mnTag').disable();
+                            Ext.getCmp('mnPerms').disable();
+
+                            var success = function(o) {
+                                if(parseInt(o.responseText)) {
+                                    Ext.getCmp('mnNotif').setText(acs_lang_text.unsubscribe_notification ||'Unsubscribe');
+                                } else {
+                                    Ext.getCmp('mnNotif').setText(acs_lang_text.request_notification ||'Request Notification');
+                                }
+                            }
+
+                            var failure = function(response) {
+                                // presume user is not subscribed
+                                Ext.getCmp('mnNotif').setText(acs_lang_text.request_notification || 'Request Notification');
+                            }
+
+                            this.fsCore.doAction('checknotif',success, failure, null,{ object_id:treepanel.getSelectionModel().getSelectedNode().attributes["id"] });
+                            Ext.getCmp('mnNotif').enable();
+
                             break;
                         case "symlink":
-                            menu.items.items[0].setText(acs_lang_text.open || 'Open');
-                            menu.items.items[1].disable();
-                            menu.items.items[3].disable();
-                            menu.items.items[6].disable();
-                            menu.items.items[9].disable();
+                            Ext.getCmp('mnOpen').setText(acs_lang_text.open || 'Open');
+                            Ext.getCmp('mnTag').disable();
+                            Ext.getCmp('mnRename').disable();
+                            Ext.getCmp('mnProp').disable();
+                            Ext.getCmp('mnNotif').disable();
                             break;
                         case "url" :
-                            menu.items.items[0].setText(acs_lang_text.open || 'Open');
-                            menu.items.items[6].disable();
-                            menu.items.items[7].disable();
-                            menu.items.items[8].disable();
-                            menu.items.items[9].disable();
+                            Ext.getCmp('mnOpen').setText(acs_lang_text.open || 'Open');
+                            Ext.getCmp('mnProp').disable();
+                            Ext.getCmp('mnArch').disable();
+                            Ext.getCmp('mnShare').disable();
+                            Ext.getCmp('mnNotif').disable();
                             break;
                         default :
-                            menu.items.items[0].setText(acs_lang_text.download || 'Download');
-                            menu.items.items[7].disable();
-                            menu.items.items[8].disable();
-                            menu.items.items[9].disable();
+                            Ext.getCmp('mnOpen').setText(acs_lang_text.download || 'Download');
+                            Ext.getCmp('mnArch').disable();
+                            Ext.getCmp('mnShare').disable();
+                            Ext.getCmp('mnNotif').disable();
                             break;
                     }
     
                     // always disable if shared folders are not supported
                     if(!this.share_folders_p) {
-                        menu.items.items[8].disable();
-                    }
-    
-                    // always disable views if views package is not installed
-                    if(!this.views_p) {
-                        menu.items.items[2].disable();
+                        Ext.getCmp('mnShare').disable();
                     }
     
                 } else {
@@ -394,16 +444,22 @@ ajaxfs.prototype = {
 
             }
 
-        },this);
+            // always disable views if views package is not installed
 
-        menu.on("itemclick",function(item,e) {
+            if(!this.views_p) {
+                Ext.getCmp('mnView').disable();
+            }
+
+        }
+
+        var itemclick = function(item,e) {
 
             var gridpanel = this.layout.findById('filepanel');
 
             if(gridpanel.getSelectionModel().getCount() == 1) {
 
                 // panel is the filegrid
-                var panel = gridpanel;
+                var panel = this.layout.findById('filepanel');
                 var recordid = panel.getSelectionModel().getSelected().get("id");
     
                 for (var x=0; x<panel.store.data.items.length; x++) {
@@ -453,7 +509,32 @@ ajaxfs.prototype = {
                     break;
             }
 
-        },this);
+        }
+
+        var menu = new Ext.menu.Menu({
+            id: 'toolsmenu',
+            shadow:false,
+            items: [
+                new Ext.menu.Item({ id:'mnOpen',text: acs_lang_text.open || 'Open',icon: '/resources/ajaxhelper/icons/page_white.png'}),
+                new Ext.menu.Item({ id:'mnTag', text: acs_lang_text.tag || 'Tag', icon: '/resources/ajaxhelper/icons/tag_blue.png' }),
+                new Ext.menu.Item({ id:'mnView', text: acs_lang_text.views || 'Views', icon: '/resources/ajaxhelper/icons/camera.png' }),
+                new Ext.menu.Item({ id:'mnRename', text: acs_lang_text.rename || 'Rename', icon: '/resources/ajaxhelper/icons/page_edit.png' }), 
+                new Ext.menu.Item({ id:'mnCopyLink', text: acs_lang_text.linkaddress || 'Copy Link Address', icon: '/resources/ajaxhelper/icons/page_copy.png' }), 
+                new Ext.menu.Item({ id:'mnPerms', text: acs_lang_text.permissions || 'Permissions', icon: '/resources/ajaxhelper/icons/group_key.png' }), 
+                new Ext.menu.Item({ id:'mnProp', text: acs_lang_text.properties || 'Properties', icon: '/resources/ajaxhelper/icons/page_edit.png' }), 
+                new Ext.menu.Item({ id:'mnArch', text: acs_lang_text.download_archive || 'Download archive', icon: '/resources/ajaxhelper/icons/arrow_down.png' }),
+                new Ext.menu.Item({ id:'mnShare', text: acs_lang_text.sharefolder || 'Share Folder', icon: '/resources/ajaxhelper/icons/group_link.png' }),
+                new Ext.menu.Item({ id:'mnNotif', text: acs_lang_text.request_notification || 'Request Notification', icon: '/resources/ajaxhelper/icons/email.png' }) ],
+            listeners:{
+                'beforeshow':{
+                    scope:this,
+                    fn:beforeshow
+                }, 'itemclick':{
+                    scope:this,
+                    fn:itemclick
+                }
+            }
+        })
 
         var tbutton = {
             text:'Tools',
@@ -472,17 +553,17 @@ ajaxfs.prototype = {
         if(rootnode.attributes["write_p"] == 't') {
             var toolbar = [
                 ' ',
-                {text: acs_lang_text.newfolder || 'New Folder', tooltip: acs_lang_text.newfolder || 'New Folder', icon: '/resources/ajaxhelper/icons/folder_add.png', cls : 'x-btn-text-icon', handler: this.addFolder.createDelegate(this)},
-                {text: acs_lang_text.uploadfile || 'Upload Files', tooltip: acs_lang_text.uploadfile || 'Upload Files', icon: '/resources/ajaxhelper/icons/page_add.png', cls : 'x-btn-text-icon', handler: this.addFile.createDelegate(this)}
+                {text: acs_lang_text.newfolder || 'New Folder', tooltip: acs_lang_text.newfolder || 'New Folder', icon: '/resources/ajaxhelper/icons/folder_add.png', cls : 'x-btn-text-icon', scope:this,handler: this.addFolder},
+                {id:'btnUploadFile', text: acs_lang_text.uploadfile || 'Upload Files', tooltip: acs_lang_text.uploadfile || 'Upload Files', icon: '/resources/ajaxhelper/icons/page_add.png', cls : 'x-btn-text-icon', scope:this, handler: this.addFile}
             ];
             if(this.create_url_p) {
-                toolbar.push({text: acs_lang_text.createurl || 'Create Url',tooltip: acs_lang_text.createurl || 'Create Url', icon: '/resources/ajaxhelper/icons/page_link.png', cls : 'x-btn-text-icon', handler: this.addUrl.createDelegate(this)});
+                toolbar.push({text: acs_lang_text.createurl || 'Create Url',tooltip: acs_lang_text.createurl || 'Create Url', icon: '/resources/ajaxhelper/icons/page_link.png', cls : 'x-btn-text-icon', scope:this, handler: this.addUrl});
             }
-            toolbar.push({text: acs_lang_text.deletefs || 'Delete', tooltip: acs_lang_text.deletefs || 'Delete', icon: '/resources/ajaxhelper/icons/delete.png', cls : 'x-btn-text-icon', handler: this.delItem.createDelegate(this)});
+            toolbar.push({text: acs_lang_text.deletefs || 'Delete', tooltip: acs_lang_text.deletefs || 'Delete', icon: '/resources/ajaxhelper/icons/delete.png', cls : 'x-btn-text-icon', scope:this, handler: this.delItem });
             toolbar.push(this.createToolsMenu());
             toolbar.push('->');
         }
-        toolbar.push({tooltip: 'This may take a few minutes if you have a lot of files', text: acs_lang_text.download_archive || 'Download Archive', icon: '/resources/ajaxhelper/icons/arrow_down.png', cls : 'x-btn-text-icon', handler: this.downloadArchive.createDelegate(this,[rootnode.id],false)});
+        toolbar.push({tooltip: 'This may take a few minutes if you have a lot of files', text: acs_lang_text.download_archive || 'Download Archive', icon: '/resources/ajaxhelper/icons/arrow_down.png', cls : 'x-btn-text-icon', scope:this, handler: function() { this.downloadArchive.(rootnode.id) } });
         return toolbar;
     },
 
@@ -493,8 +574,8 @@ ajaxfs.prototype = {
             id:'leftpanel',
             region:'west',
             collapsible:true,
-            titlebar:true,
-            title:' ',
+            collapseMode: 'mini',
+            titlebar:false,
             layout:'accordion',
             split:true,
             width:300,
@@ -518,10 +599,7 @@ ajaxfs.prototype = {
             attributes: this.config.treerootnode.attributes
         });
 
-        var loader = new Ext.tree.TreeLoader({ 
-            dataUrl:this.xmlhttpurl+'load-treenodes',
-            baseParams: { package_id:this.config.package_id }
-        });
+        var loader = this.fsCore.createTreeLoader();
 
         var treepanel = new Ext.tree.TreePanel({
             id:'treepanel',
@@ -557,7 +635,7 @@ ajaxfs.prototype = {
                             }
                         }
                     }
-                    return true;
+                    return "x-dd-drop-ok";
 
                 }, onNodeDrop : function(treenode,source,e,data) {
 
@@ -609,17 +687,16 @@ ajaxfs.prototype = {
                             Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+"<br>"+err_msg_txt2);
                         }
                     }
-            
-                    Ext.Ajax.request({
-                        url:this.xmlhttpurl+"move-fsitem",
-                        success: moveSuccess, failure: function(response) {
-                            var resultObj = Ext.decode(response.responseText);
-                            var msg = "";
-                            if(resultObj.error) { msg = resultObj.error }
-                            // ajax failed, revert value
-                            Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+"<br>"+msg+"<br>"+err_msg_txt2);
-                        }, params: { folder_target_id:folder_target_id,file_ids:file_ids }
-                    });
+
+                    var failure=function(response) {
+                        var resultObj = Ext.decode(response.responseText);
+                        var msg = "";
+                        if(resultObj.error) { msg = resultObj.error }
+                        // ajax failed, revert value
+                        Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+"<br>"+msg+"<br>"+err_msg_txt2);
+                    }
+
+                    this.fsCore.doAction('move',moveSuccess, failure, null,{ folder_target_id:folder_target_id,file_ids:file_ids });
 
                     return true;
 
@@ -685,21 +762,22 @@ ajaxfs.prototype = {
             var err_msg_txt = acs_lang_text.an_error_occurred || "An error occurred";
             var err_msg_txt2 = acs_lang_text.reverted || "Your changes have been reverted";
 
-            Ext.Ajax.request({
-                url:this.xmlhttpurl+"rename-fsitem",
-                success: function(response) {
-                    var resultObj = Ext.decode(response.responseText);
-                    if (!resultObj.success) {
-                        Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+": <br><br><font color='red'>"+resultObj.error+"</font><br><br>"+err_msg_txt2);
-                        node.editNode.setText(oldval);
-                    }
-                }, failure: function() {
-                    // ajax failed, revert value
-                    Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+"<br>"+err_msg_txt2);
+            var success = function(response) {
+                var resultObj = Ext.decode(response.responseText);
+                if (!resultObj.success) {
+                    Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+": <br><br><font color='red'>"+resultObj.error+"</font><br><br>"+err_msg_txt2);
                     node.editNode.setText(oldval);
-                }, params: { newname:newval, object_id:node.editNode.id, type:"folder" }
-            });
-                
+                }
+            }
+
+            var failure = function() {
+                // ajax failed, revert value
+                Ext.Msg.alert(acs_lang_text.error || "Error",err_msg_txt+"<br>"+err_msg_txt2);
+                node.editNode.setText(oldval);
+            }
+
+            this.fsCore.doAction('rename',success, failure, null,{ newname:newval, object_id:node.editNode.id, type:"folder" });
+
         }, this, true);
 
     },
@@ -780,11 +858,7 @@ ajaxfs.prototype = {
                     {name:'size'},
                     {name:'lastmodified'}] );
 
-
-        var proxy = new Ext.data.HttpProxy( {
-                        url : this.xmlhttpurl+ 'get-foldercontents'
-                    } );
-
+        var proxy = this.fsCore.createFilePanelProxy();
 
         var colModel = new Ext.grid.ColumnModel(cols);
 
@@ -799,7 +873,6 @@ ajaxfs.prototype = {
             split:true,
             autoScroll:true,
             autoExpandColumn:'filename',
-            collapsible:true,
             enableDragDrop:true,
             width:250,
             loadMask:true,
@@ -808,6 +881,8 @@ ajaxfs.prototype = {
                 forceFit: false,
                 enableRowBody:true,
                 showPreview:true,
+                deferEmptyText: true,
+                emptyText: 'This folder is empty',
                 getRowClass: function(record,rowIndex,p,ds) {
                     var xf = Ext.util.Format;
                     if (record.data.tags!= "") {
@@ -861,52 +936,82 @@ ajaxfs.prototype = {
             new Ext.menu.Item({
                 text: openitem_txt,
                 icon: '/resources/ajaxhelper/icons/page_white.png',
-                handler: this.openItem.createDelegate(this,[grid, i, e],false)
+                scope:this,
+                handler: function() {
+                    this.openItem(grid, i, e)
+                }
             }),
             new Ext.menu.Item({
                 text: 'Tag',
                 icon: '/resources/ajaxhelper/icons/tag_blue.png',
-                handler: this.tagFsitem.createDelegate(this,[grid, i, e],false)
+                scope:this,
+                handler: function() {
+                    this.tagFsitem(grid, i, e)
+                }
             }),
             new Ext.menu.Item({
                 text: 'Views',
                 icon: '/resources/ajaxhelper/icons/camera.png',
-                handler: this.redirectViews.createDelegate(this,[grid, i, e],false)
+                scope:this,
+                handler: function() {
+                    this.redirectViews(grid, i, e)
+                }
             }),
             new Ext.menu.Item({
                 text: acs_lang_text.deletefs || 'Delete',
                 icon: '/resources/ajaxhelper/icons/delete.png',
-                handler: this.delItem.createDelegate(this,[grid,i,e],false)
+                scope:this,
+                handler: function() {
+                    this.delItem(grid,i,e)
+                }
             }),
             new Ext.menu.Item({
                 text: acs_lang_text.rename || 'Rename',
                 icon: '/resources/ajaxhelper/icons/page_edit.png',
-                handler: this.renameItem.createDelegate(this,[grid,i,e],false)
+                scope:this,
+                handler: function() {
+                    this.renameItem(grid,i,e)
+                }
             }),
             new Ext.menu.Item({
                 text: acs_lang_text.linkaddress || 'Copy Link Address',
                 icon: '/resources/ajaxhelper/icons/page_copy.png',
-                handler: this.copyLink.createDelegate(this,[grid,i,e],false)
+                scope:this,
+                handler: function() {
+                    this.copyLink(grid,i,e)
+                }
             }), 
             new Ext.menu.Item({
                 text: acs_lang_text.permissions || 'Permissions',
                 icon: '/resources/ajaxhelper/icons/group_key.png',
-                handler: this.redirectPerms.createDelegate(this,[grid, i, e],false)
+                scope:this,
+                handler: function() {
+                    this.redirectPerms(grid,i,e)
+                }
             }), 
             new Ext.menu.Item({
                 text: acs_lang_text.properties || 'Properties',
                 icon: '/resources/ajaxhelper/icons/page_edit.png',
-                handler: this.showRevisions.createDelegate(this,[grid, i, e],false)
+                scope:this,
+                handler: function() {
+                    this.showRevisions(grid,i,e)
+                }
             }), 
             new Ext.menu.Item({
                 text: acs_lang_text.download_archive || 'Download archive',
                 icon: '/resources/ajaxhelper/icons/arrow_down.png',
-                handler: this.downloadArchive.createDelegate(this,[recordid],false)
+                scope:this,
+                handler: function() {
+                    this.downloadArchive(recordid)
+                }
             }),
             new Ext.menu.Item({
                 text: acs_lang_text.sharefolder || 'Share Folder',
                 icon: '/resources/ajaxhelper/icons/group_link.png',
-                handler: this.showShareOptions.createDelegate(this,[grid, i, e],false)
+                scope:this,
+                handler: function() {
+                    this.showShareOptions(grid,i,e)
+                }
             })  ]
         });
 
@@ -1119,39 +1224,40 @@ ajaxfs.prototype = {
             }
 
         }
-    
+
+        var success = function(response) {
+            var resultobj = Ext.decode(response.responseText);
+            if(resultobj.success) {
+                if(delfromtree) {
+                    var selectednode = treepanel.getSelectionModel().getSelectedNode();
+                    var parentnode = selectednode.parentnode;
+                    parentnode.fireEevent("click",parentnode);
+                    parentnode.removeChild(selectednode);
+                } else {
+                    for(var x=0; x<selectedRows.length; x++) {
+                        // hide the node from the json view
+                        filepanel.store.remove(selectedRows[x]);
+                        // if it's a node on the tree, remove it
+                        var treenodeid = selectedRows[x].get("id");
+                        var selectednode = treepanel.getNodeById(treenodeid);
+                        if (selectednode) {
+                            selectednode.parentnode.fireEevent("click",selectednode.parentnode);
+                            selectednode.parentnode.removeChild(selectednode);
+                        }
+                    }
+                }
+            } else {
+                ext.msg.alert(acs_lang_text.error || "error","sorry, we encountered an error.");
+            }
+        }
+
+        var failure = function() {
+            Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
+        }
+
         var doDelete = function(choice) {
             if (choice === "yes") {
-                Ext.Ajax.request({
-                    url:this.xmlhttpurl+"delete-fsitem",
-                    success: function(response) {
-                        var resultObj = Ext.decode(response.responseText);
-                        if(resultObj.success) {
-                            if(delfromtree) {
-                                var selectednode = treepanel.getSelectionModel().getSelectedNode();
-                                var parentnode = selectednode.parentNode;
-                                parentnode.fireEvent("click",parentnode);
-                                parentnode.removeChild(selectednode);
-                            } else {
-                                for(var x=0; x<selectedRows.length; x++) {
-                                    // hide the node from the json view
-                                    filepanel.store.remove(selectedRows[x]);
-                                    // if it's a node on the tree, remove it
-                                    var treenodeid = selectedRows[x].get("id");
-                                    var selectednode = treepanel.getNodeById(treenodeid);
-                                    if (selectednode) {
-                                        selectednode.parentNode.fireEvent("click",selectednode.parentNode);
-                                        selectednode.parentNode.removeChild(selectednode);
-                                    }
-                                }
-                            }
-                        } else {
-                            Ext.Msg.alert(acs_lang_text.error || "Error","Sorry, we encountered an error.");
-                        }
-                    }, failure: function() {
-                        Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
-                    }, params: params
-                });
+                this.fsCore.doAction('delete',success, failure, null,params);
             }
         }
 
@@ -1168,167 +1274,239 @@ ajaxfs.prototype = {
         var tree = this.layout.findById('treepanel');
         var currentTreeNode = tree.getSelectionModel().getSelectedNode();
         currentTreeNode.expand();
+
+        // error message if this action fails
         var error_msg_txt = acs_lang_text.new_folder_error || "Sorry, there was an error trying to create your new folder.";
-        
-        Ext.Ajax.request({
-            url:this.xmlhttpurl+"add-blankfolder",
-            success: function(response) {
-                var resultObj = Ext.decode(response.responseText);
-                if (resultObj.success) {
-                    // create a new blank node on the currently selected one
-                    var newnode = currentTreeNode.appendChild(new Ext.tree.TreeNode({text:resultObj.pretty_folder_name,id:resultObj.id,iconCls:"folder",singleClickExpand:true,attributes:{write_p:'t'}}));
-                    tree.getSelectionModel().select(newnode);
-                    newnode.loaded=true;
-                    newnode.fireEvent("click",newnode);
-                    setTimeout(function(){
-                        te.editNode = newnode;
-                        te.startEdit(newnode.ui.textNode);
-                    }, 10);
-                } else {
-                    Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
-                }
-            }, failure: function(response) {
-                var resultObj = Ext.decode(response.responseText);
+
+        // success function
+        var success = function(response) {
+            var resultObj = Ext.decode(response.responseText);
+            if (resultObj.success) {
+                // create a new blank node on the currently selected one
+                var newnode = currentTreeNode.appendChild(new Ext.tree.TreeNode({text:resultObj.pretty_folder_name,id:resultObj.id,iconCls:"folder",singleClickExpand:true,attributes:{write_p:'t',size:'',type:'folder',symlink_id:''}}));
+                tree.getSelectionModel().select(newnode);
+                newnode.loaded=true;
+                newnode.fireEvent("click",newnode);
+                setTimeout(function(){
+                    te.editNode = newnode;
+                    te.startEdit(newnode.ui.textNode);
+                }, 10);
+            } else {
                 Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
-            }, params: { folder_id: currentTreeNode.attributes["id"] }
-        });
+            }
+        }
+
+        // failure function
+        var failure = function(response) {
+            var resultObj = Ext.decode(response.responseText);
+            Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
+        }
+
+        // execute the ajax
+        this.fsCore.doAction('addfolder',success, failure, null,{ folder_id: currentTreeNode.attributes["id"] });
 
     },
 
     createSwfObj : function() {
 
-        var ajaxfsobj = this;
-        var treepanel = ajaxfsobj.layout.findById('treepanel');
-        var currentfolder = ajaxfsobj.currentfolder;
+        var treepanel = this.layout.findById('treepanel');
+        var currentfolder = this.currentfolder;
 
         if(this.swfu == null) {
 
+            var ajaxfsobj = this;
             var package_id = String(this.config.package_id);
             var user_id = String(this.config.user_id);
             var folder_id = String(this.currentfolder);
             var max_file_size = String(this.config.max_file_size);
 
-            var uploadProgress = function (fileObj, bytesLoaded) {
-                try {
-                    var percent = Math.ceil((bytesLoaded / fileObj.size) * 100)
-                    var progress = new FileProgress(fileObj, this.getSetting("progress_target"));
-                    progress.SetProgress(percent);
-                    progress.SetStatus(acs_lang_text.uploading || "Uploading...");
-                } catch (ex) { this.debugMessage(ex); }
-            }
+            var progress_target = 'fsuploadprogress';
 
-            var uploadCancel = function(fileObj) {
-                try {
-                    var progress = new FileProgress(fileObj, this.getSetting("progress_target"));
-                    progress.SetCancelled();
-                    progress.SetStatus(acs_lang_text.uploadcancel || "Cancelled (This item will be removed shortly)");
-                    progress.ToggleCancel(false);
-            
-                }
-                catch (ex) { this.debugMessage(ex) }
-            }
-
-            var uploadComplete = function(fileObj) {
-                try {
-                    var progress = new FileProgress(fileObj, this.getSetting("progress_target"));
-                    progress.SetComplete();
-                    progress.SetStatus(acs_lang_text.complete || "Complete.");
-                    progress.ToggleCancel(false);
-            
-                } catch (ex) { this.debugMessage(ex); }
-            }
-
-            var uploadQueueComplete = function(fileidx) {
-                var currentTreeNode = treepanel.getNodeById(ajaxfsobj.currentfolder);
-                currentTreeNode.fireEvent("click",currentTreeNode);
-            }
-
-            var uploadError = function(error_code, fileObj, message) {
-                try {
-                    if (error_code == SWFUpload.ERROR_CODE_QUEUE_LIMIT_EXCEEDED) {
-                        Ext.Msg.alert(acs_lang_text.alert || "Alert","You have attempted to queue too many files.\n" + (message == 0 ? "You have reached the upload limit." : "You may select " + (message > 1 ? "up to " + message + " files." : "one file.")));
-                        return;
-                    }
-            
-                    var progress = new FileProgress(fileObj, this.getSetting("progress_target"));
-                    progress.SetError();
-                    progress.ToggleCancel(false);
-            
-                    switch(error_code) {
-                        case SWFUpload.ERROR_CODE_HTTP_ERROR:
-                            progress.SetStatus("Upload Error");
-                            this.debugMessage("Error Code: HTTP Error, File name: " + file.name + ", Message: " + message);
-                            break;
-                        case SWFUpload.ERROR_CODE_MISSING_UPLOAD_TARGET:
-                            progress.SetStatus("Configuration Error");
-                            this.debugMessage("Error Code: No backend file, File name: " + file.name + ", Message: " + message);
-                            break;
-                        case SWFUpload.ERROR_CODE_UPLOAD_FAILED:
-                            progress.SetStatus("Upload Failed.");
-                            this.debugMessage("Error Code: Upload Failed, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
-                            break;
-                        case SWFUpload.ERROR_CODE_IO_ERROR:
-                            progress.SetStatus("Server (IO) Error");
-                            this.debugMessage("Error Code: IO Error, File name: " + file.name + ", Message: " + message);
-                            break;
-                        case SWFUpload.ERROR_CODE_SECURITY_ERROR:
-                            progress.SetStatus("Security Error");
-                            this.debugMessage("Error Code: Security Error, File name: " + file.name + ", Message: " + message);
-                            break;
-                        case SWFUpload.ERROR_CODE_FILE_EXCEEDS_SIZE_LIMIT:
-                            progress.SetStatus("File is too big.");
-                            this.debugMessage("Error Code: File too big, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
-                            break;
-                        case SWFUpload.ERROR_CODE_ZERO_BYTE_FILE:
-                            progress.SetStatus("Cannot upload Zero Byte files.");
-                            this.debugMessage("Error Code: Zero byte file, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
-                            break;
-                        case SWFUpload.ERROR_CODE_UPLOAD_LIMIT_EXCEEDED:
-                            progress.SetStatus("Upload limit exceeded.");
-                            this.debugMessage("Error Code: Upload Limit Exceeded, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
-                            break;
-                        default:
-                            progress.SetStatus("Unhandled Error");
-                            this.debugMessage("Error Code: " + error_code + ", File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
-                            break;
-                    }
-                } catch (ex) {
-                    this.debugMessage(ex);
-                }
-            }
-
-            var uploadStart = function (fileObj) {
+            var fileQueued = function(fileObj) {
                 var upload_txt = acs_lang_text.for_upload_to || "for upload to";
                 var zip_txt = acs_lang_text.zip_extracted || "Zip File (Will be extracted after upload)";
                 try {
                     var folderid = ajaxfsobj.currentfolder;
                     var foldername = treepanel.getNodeById(folderid).text;
-                    var progress = new FileProgress(fileObj, this.getSetting("progress_target"));
+                    var progress = new FileProgress(fileObj, progress_target);
                     progress.SetStatus( upload_txt + " <b>"+foldername+"</b><br>Title: <input type='text' onblur=\"fsInstance.swfu.removeFileParam('"+fileObj.id+"','filetitle');fsInstance.swfu.addFileParam('"+fileObj.id+"','filetitle',this.value)\">(optional)<br><input type='checkbox' id='zip"+fileObj.id+"' onclick=\"if(document.getElementById('zip"+fileObj.id+"').checked) { fsInstance.swfu.addFileParam('"+fileObj.id+"','unpack_p','1') } else { fsInstance.swfu.removeFileParam('"+fileObj.id+"','unpack_p') }\"> "+ zip_txt);
                     progress.ToggleCancel(true, this);
                     this.addFileParam(fileObj.id, "folder_id", folderid);
-                } catch (ex) { this.debugMessage(ex); }
+                } catch (ex) { 
+                    Ext.Msg.alert(acs_lang_text.error || "Error",ex);
+                }
             }
 
-            // FIXME (SECURITY): we are getting the user_id from the config,
-            //  since we're using flash there's the current session is not used when the upload is done
-            //  we can't trust the config because malicious javascript might try to insert a different user_id
+            var fileDialogStart = function() {
+                // console.log('file dialog start')
+            }
+
+            var fileQueueError = function(file, errorCode, message) {
+                console.log('file queue error')
+                try {
+                    if (errorCode === SWFUpload.QUEUE_ERROR.QUEUE_LIMIT_EXCEEDED) {
+                        alert("You have attempted to queue too many files.\n" + (message === 0 ? "You have reached the upload limit." : "You may select " + (message > 1 ? "up to " + message + " files." : "one file.")));
+                        return;
+                    }
+            
+                    var progress = new FileProgress(file, progress_target);
+                    progress.setError();
+                    progress.toggleCancel(false);
+            
+                    switch (errorCode) {
+                    case SWFUpload.QUEUE_ERROR.FILE_EXCEEDS_SIZE_LIMIT:
+                        progress.setStatus("File is too big.");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: File too big, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
+                        break;
+                    case SWFUpload.QUEUE_ERROR.ZERO_BYTE_FILE:
+                        progress.setStatus("Cannot upload Zero Byte files.");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Zero byte file, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
+                        break;
+                    case SWFUpload.QUEUE_ERROR.INVALID_FILETYPE:
+                        progress.setStatus("Invalid File Type.");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Invalid File Type, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
+                        break;
+                    case SWFUpload.QUEUE_ERROR.QUEUE_LIMIT_EXCEEDED:
+                        Ext.Msg.alert(acs_lang_text.error || "Error","You have selected too many files.  " +  (message > 1 ? "You may only add " +  message + " more files" : "You cannot add any more files."));
+                        break;
+                    default:
+                        if (file !== null) {
+                            progress.setStatus("Unhandled Error");
+                        }
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: " + errorCode + ", File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
+                        break;
+                    }
+                } catch (ex) { 
+                    Ext.Msg.alert(acs_lang_text.error || "Error",ex);
+                }
+            }
+
+            var fileDialogComplete = function() {
+                // console.log('file dialog complete')
+            }
+
+            var uploadStart = function (fileObj) {
+                console.log('upload start')
+                var upload_txt = acs_lang_text.for_upload_to || "for upload to";
+                var zip_txt = acs_lang_text.zip_extracted || "Zip File (Will be extracted after upload)";
+                try {
+                    var folderid = ajaxfsobj.currentfolder;
+                    var foldername = treepanel.getNodeById(folderid).text;
+                    var progress = new FileProgress(fileObj, progress_target);
+                    progress.SetStatus( upload_txt + " "+foldername+"b><br>Title: <input type='text' onblur=\"fsInstance.swfu.removeFileParam('"+fileObj.id+"','filetitle');fsInstance.swfu.addFileParam('"+fileObj.id+"','filetitle',this.value)\">(optional)<br><input type='checkbox' id='zip"+fileObj.id+"' onclick=\"if(document.getElementById('zip"+fileObj.id+"').checked) { fsInstance.swfu.addFileParam('"+fileObj.id+"','unpack_p','1') } else { fsInstance.swfu.removeFileParam('"+fileObj.id+"','unpack_p') }\"> "+ zip_txt);
+                    progress.ToggleCancel(true, this);
+                    this.addFileParam(fileObj.id, "folder_id", folderid);
+                } catch (ex) { 
+                    Ext.Msg.alert(acs_lang_text.error || "Error",ex);
+                }
+            }
+
+            var uploadProgress = function (fileObj, bytesLoaded, bytesTotal) {
+                console.log('upload progress')
+                try {
+                    var percent = Math.ceil((bytesLoaded / bytesTotal) * 100);
+                    var progress = new FileProgress(fileObj, progress_target);
+                    progress.SetProgress(percent);
+                    progress.SetStatus(acs_lang_text.uploading || "Uploading...");
+                } catch (ex) { 
+                    Ext.Msg.alert(acs_lang_text.error || "Error",ex);
+                }
+            }
+
+            var uploadQueueComplete = function() {
+                console.log('upload queue complete')
+                var currentTreeNode = treepanel.getNodeById(ajaxfsobj.currentfolder);
+                currentTreeNode.fireEvent("click",currentTreeNode);
+            }
+
+            var uploadError = function(file, errorCode, message) {
+                console.log('upload error')
+                try {
+                    var progress = new FileProgress(file, progress_target);
+                    progress.setError();
+                    progress.ToggleCancel(false);
+            
+                    switch (errorCode) {
+                    case SWFUpload.UPLOAD_ERROR.HTTP_ERROR:
+                        progress.setStatus("Upload Error: " + message);
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: HTTP Error, File name: " + file.name + ", Message: " + message);
+                        break;
+                    case SWFUpload.UPLOAD_ERROR.MISSING_UPLOAD_URL:
+                        progress.setStatus("Configuration Error");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: No backend file, File name: " + file.name + ", Message: " + message);
+                        break;
+                    case SWFUpload.UPLOAD_ERROR.UPLOAD_FAILED:
+                        progress.setStatus("Upload Failed.");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Upload Failed, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
+                        break;
+                    case SWFUpload.UPLOAD_ERROR.IO_ERROR:
+                        progress.setStatus("Server (IO) Error");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: IO Error, File name: " + file.name + ", Message: " + message);
+                        break;
+                    case SWFUpload.UPLOAD_ERROR.SECURITY_ERROR:
+                        progress.setStatus("Security Error");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Security Error, File name: " + file.name + ", Message: " + message);
+                        break;
+                    case SWFUpload.UPLOAD_ERROR.UPLOAD_LIMIT_EXCEEDED:
+                        progress.setStatus("Upload limit exceeded.");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Upload Limit Exceeded, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
+                        break;
+                    case SWFUpload.UPLOAD_ERROR.SPECIFIED_FILE_ID_NOT_FOUND:
+                        progress.setStatus("File not found.");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: The file was not found, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
+                        break;
+                    case SWFUpload.UPLOAD_ERROR.FILE_VALIDATION_FAILED:
+                        progress.setStatus("Failed Validation.  Upload skipped.");
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: File Validation Failed, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
+                        break;
+                    case SWFUpload.UPLOAD_ERROR.FILE_CANCELLED:
+                        progress.setStatus("Cancelled");
+                        progress.setCancelled();
+                        break;
+                    case SWFUpload.UPLOAD_ERROR.UPLOAD_STOPPED:
+                        progress.setStatus("Stopped");
+                        break;
+                    default:
+                        progress.setStatus("Unhandled Error: " + error_code);
+                        Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: " + errorCode + ", File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
+                        break;
+                    }
+                } catch (ex) { 
+                    Ext.Msg.alert(acs_lang_text.error || "Error",ex);
+                }
+            }
+
+            var uploadSuccess = function(fileObj,serverData) {
+                console.log('upload success')
+                try {
+                    var progress = new FileProgress(fileObj, progress_target);
+                    progress.SetComplete();
+                    progress.SetStatus(acs_lang_text.complete || "Complete.");
+                    progress.ToggleCancel(false);
+                } catch (ex) { 
+                    Ext.Msg.alert(acs_lang_text.error || "Error",ex);
+                }
+            }
+
             this.swfu = new SWFUpload({
                 debug: false,
-                upload_target_url: this.xmlhttpurl + "add-file-flash",
-                upload_params: {user_id:user_id,package_id:package_id},
+                post_params: {user_id:user_id,package_id:package_id},
                 file_types : "*.*",
-                file_size_limit : max_file_size,
-                file_queue_limit : 0,
-                file_upload_limit : 10,
-                begin_upload_on_queue: false,
-                file_queued_handler : uploadStart,
-                file_progress_handler : uploadProgress,
-                file_cancelled_handler : uploadCancel,
-                file_complete_handler : uploadComplete,
+                button_placeholder_id:"btnSwfUpload",
+                button_text:'&nbsp;<b>BROWSE</b>',
+                button_width: 61,
+                button_height: 16,
+                file_dialog_start_handler : fileDialogStart,
+                file_queued_handler : fileQueued,
+                file_queue_error_handler : fileQueueError,
+                file_dialog_complete_handler : fileDialogComplete,
+                upload_start_handler : uploadStart,
+                upload_progress_handler : uploadProgress,
+                upload_error_handler : uploadError,
+                upload_success_handler : uploadSuccess,
                 queue_complete_handler : uploadQueueComplete,
-                error_handler : uploadError,
-                flash_url : "/resources/ajax-filestorage-ui/swfupload/swfupload.swf"
+                upload_url: this.xmlhttpurl + "add-file-flash",
+                flash_url : "/resources/ajax-filestorage-ui/swfupload2/swfupload.swf"
             });
 
         }
@@ -1336,11 +1514,14 @@ ajaxfs.prototype = {
 
     addFile : function() {
 
+        var mode = null;
+
         if(this.upldWindow == null) {
 
-            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || checkFlashVersion() == 10 || Ext.isLinux) {
+            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || Ext.isLinux) {
 
                 /*** Single File Upload *******/
+                mode = 'single';
 
                 var msg1=acs_lang_text.file_to_upload || "File to upload";
                 var msg2=acs_lang_text.file_title || "Title";
@@ -1355,28 +1536,29 @@ ajaxfs.prototype = {
                     align:'left',
                     frame:true,
                     html: "<form id=\"newfileform\" method=\"post\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"package_id\" value=\""+this.config.package_id+"\"><input type=\"hidden\" name=\"folder_id\" value=\""+this.currentfolder+"\"><p>"+msg1+"<br /><input type=\"file\" name=\"upload_file\" id=\"upload_file\"></p><br><p>"+msg2+"<br /><input type=\"text\" name=\"filetitle\" id=\"filetitle\"></p><br><p>"+msg3+" :<br /><textarea name=\"filedescription\" id=\"filedescription\"></textarea></p><p>"+msg4+" :<br /><br /><input type=\"checkbox\" name=\"unpack_p\" value=\"t\" id=\"unpack_p\" /> "+msg5+"</p></form>"
-                });
+                })
+
                 var uploadBtns = [{
                         text: acs_lang_text.upload || 'Upload',
-                        handler: this.uploadOneFile.createDelegate(this),
+                        scope:this,
+                        handler: this.uploadOneFile,
                         icon:"/resources/ajaxhelper/icons/arrow_up.png",
                         cls:"x-btn-text-icon"
                     },{
                         text: acs_lang_text.close || 'Close',
+                        scope:this,
                         handler: function(){
                             this.upldWindow.hide();
-                        }.createDelegate(this),
-                        icon:"/resources/ajaxhelper/icons/cross.png",
+                        }, icon:"/resources/ajaxhelper/icons/cross.png",
                         cls:"x-btn-text-icon"
                 }]
 
             } else {
 
                 /*** Multi File Upload *******/
+                mode='multiple';
 
-                this.createSwfObj();
-
-                var msg_txt = acs_lang_text.upload_intro || "Click <b>Browse</b> to select a file to upload to the selected folder on the tree.";
+                var msg_txt = acs_lang_text.upload_intro || "Click <b>Upload</b> to select a file to upload to the selected folder on the tree.";
                 var modal = false;
                 var title = "Upload Files";
 
@@ -1387,28 +1569,28 @@ ajaxfs.prototype = {
                     html: "<div id=\"upldMsg\">"+msg_txt+"<hr></div><div class=\"flash\" id=\"fsuploadprogress\"></div>"
                 });
 
-                uploadBody.on("render",function() {
-                    this.swfu.addSetting("progress_target", "fsuploadprogress");
-                },this);
-
-                var uploadBtns = [{
-                        text:'Browse',
-                        handler:this.swfu.browse.createDelegate(this.swfu),
-                        icon:"/resources/ajaxhelper/icons/page_add.png",
-                        cls:"x-btn-text-icon"
-                    },{
-                        text: 'Upload',
-                        handler:this.swfu.startUpload.createDelegate(this.swfu,[null,this],false),
+                var uploadBtns = [
+                    '<span id=\"btnSwfUpload\"></span>',
+                    {
+                        text: acs_lang_text.upload || 'Upload',
+                        scope:this,
+                        handler: function() {
+                            this.swfu.startUpload()
+                        },
                         icon:"/resources/ajaxhelper/icons/arrow_up.png",
                         cls:"x-btn-text-icon"
-                    },{
+                    }, {
                         text: 'Hide',
+                        scope:this,
                         handler: function(){
                             this.upldWindow.hide();
-                        }.createDelegate(this),
+                        },
                         icon:"/resources/ajaxhelper/icons/cross.png",
                         cls:"x-btn-text-icon"
-                }]
+                    }
+                ]
+
+
             }
 
             this.upldWindow = new Ext.Window({
@@ -1425,14 +1607,20 @@ ajaxfs.prototype = {
                 buttons: uploadBtns
             });
 
+            if(mode=='multiple') {
+                this.upldWindow.on('show',function() {
+                    this.createSwfObj()
+                },this,{single:true})
+            }
+
         } else {
-            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || checkFlashVersion() == 10 || Ext.isLinux) {
+            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || Ext.isLinux) {
                 document.getElementById('newfileform').reset();
                 document.getElementById('newfileform').folder_id.value = this.currentfolder;
             }
         }
 
-        this.upldWindow.show();
+        this.upldWindow.show('btnUploadFile');
     },
 
     uploadOneFile : function() {
@@ -1493,19 +1681,19 @@ ajaxfs.prototype = {
                     buttonAlign:'left',
                     items: [
                         {xtype:'textfield',fieldLabel: 'Title',allowBlank:false,name:'fstitle',tabIndex:1},
-                        {xtype:'textfield',fieldLabel: 'URL',allowBlank:false,name:'fsurl',tabIndex:2,validator:isURL},
+                        {xtype:'textfield',fieldLabel: 'URL',allowBlank:false,name:'fsurl',tabIndex:2,validator:isURL,value:'http://'},
                         {xtype:'textfield',fieldLabel: 'Description',name:'fsdescription',tabIndex:3}
                     ]
                 }), buttons:  [{
                         text:'Submit',
+                        scope:this,
                         handler: function() {
-                            this.createurlWindow.findById('form_create_url').getForm().submit( {
-                                url:this.xmlhttpurl+"add-url",
-                                waitMsg:'One moment ....',
-                                params: {package_id:this.config.package_id,folder_id:this.currentfolder},
-                                reset: true,
-                                scope: this,
-                                success: function(form,action) {
+
+                            var createurlform = this.createurlWindow.findById('form_create_url').getForm();
+
+                            if(createurlform.isValid()) {
+
+                                var success = function(form,action) {
                                     if(action.result) {
                                         var treepanel = this.layout.findById('treepanel');
                                         treepanel.getSelectionModel().getSelectedNode().fireEvent("click",treepanel.getSelectionModel().getSelectedNode());
@@ -1513,20 +1701,26 @@ ajaxfs.prototype = {
                                     } else {
                                         Ext.MessageBox.alert('Error','Sorry an error occured.<br>'+action.result.error);
                                     }
-                                }, failure: function(form,action) {
+                                }
+
+                                var failure = function(form,action) {
                                     if(action.result) {
                                         Ext.MessageBox.alert('Error',action.result.error);
                                     }
                                 }
-                            } )
-                        }.createDelegate(this),
+
+                                this.fsCore.formSubmit('createurl', createurlform, 'One moment ....', {package_id:this.config.package_id,folder_id:this.currentfolder}, true, success, failure, this)
+
+                            }
+                        },
                         icon:"/resources/ajaxhelper/icons/disk.png",
                         cls:"x-btn-text-icon"
                     },{
                         text: 'Close',
+                        scope:this,
                         handler: function(){
                             this.createurlWindow.hide();
-                        }.createDelegate(this),
+                        },
                         icon:"/resources/ajaxhelper/icons/cross.png",
                         cls:"x-btn-text-icon"
                 }]
@@ -1588,14 +1782,12 @@ ajaxfs.prototype = {
     
                         } else {
     
-                            Ext.Ajax.request({
-                                url:this.xmlhttpurl+"edit-name",
-                                success: successRename,
-                                failure: function(response) {
-                                    var resultObj = Ext.decode(response.responseText);
-                                    Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
-                                }, params: { newname:text,object_id:nodeid,type:nodetype,url:nodeurl}
-                            });
+                            var failure = function(response) {
+                                var resultObj = Ext.decode(response.responseText);
+                                Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
+                            } 
+
+                            this.fsCore.doAction('rename',successRename, failure, null, { newname:text,object_id:nodeid,type:nodetype,url:nodeurl });
     
                         }
     
@@ -1615,7 +1807,8 @@ ajaxfs.prototype = {
                 msg: acs_lang_text.enter_new_name || 'Please enter a new name for ... ',
                 value: node.get("title"),
                 buttons: Ext.Msg.OKCANCEL,
-                fn: handleRename.createDelegate(this)
+                scope:this,
+                fn: handleRename
             });
     
             var prompt_text_el = YAHOO.util.Dom.getElementsByClassName('ext-mb-input', 'input'); 
@@ -1638,21 +1831,22 @@ ajaxfs.prototype = {
         var xmlhttpurl = this.xmlhttpurl;
         var tagWindow = this.tagWindow;
 
+        var success = function() {
+            node.data.tags = Ext.get('fstags').getValue();
+            node.commit();
+            tagcloudpanel.load({url:xmlhttpurl+'get-tagcloud',params:{package_id:package_id}});
+            tagWindow.hide();
+        }
+
+        var failure = function(response) {
+            Ext.Msg.alert(acs_lang_text.error || "Error","Sorry, we encountered an error.");
+        }
+
         var savetags = function() {
 
-            Ext.Ajax.request({
-                url:this.xmlhttpurl+"add-tag",
-                success: function() {
-                    node.data.tags = Ext.get('fstags').getValue();
-                    node.commit();
-                    tagcloudpanel.load({url:xmlhttpurl+'get-tagcloud',params:{package_id:package_id}});
-                    tagWindow.hide();
-                }, failure: function(response) {
-                    Ext.Msg.alert(acs_lang_text.error || "Error","Sorry, we encountered an error.");
-                }, params: { object_id:node.id,package_id:package_id,tags:Ext.get('fstags').getValue()}
-            });
+            this.fsCore.doAction('tag',success, failure, null,{ object_id:node.id,package_id:package_id,tags:Ext.get('fstags').getValue()});
 
-         };
+        }
 
         if(tagWindow == null) {
 
@@ -1660,28 +1854,30 @@ ajaxfs.prototype = {
                 id:'form_addtag',
                 autoScroll:true,
                 frame:true,
-                html: "<div style='text-align:left' class='yui-skin-sam'><p>Enter or edit one or more tags. Use commas (,) to separate the tags:<br ><br><div class='yui-ac'><input type='text' name='fstags' id='fstags' size='60' autocomplete='off' value='"+taglist+"'><div id='oAutoCompContainer1' class='yui-ac-container'></div></div>"
+                html: "<div style='text-align:left;width:330px' class='yui-skin-sam'><p>Enter or edit one or more tags. Use commas (,) to separate the tags:<br ><br><div class='yui-ac'><input type='text' name='fstags' id='fstags' size='60' autocomplete='off' value='"+taglist+"'><div id='oAutoCompContainer1' class='yui-ac-container'></div></div>"
             });
     
             var tagBtns = [{
                     text: 'Ok',
                     icon:"/resources/ajaxhelper/icons/disk.png",
                     cls:"x-btn-text-icon",
-                    handler:savetags.createDelegate(this)
+                    scope:this,
+                    handler:savetags
                 },{
                     text: 'Cancel',
                     icon:"/resources/ajaxhelper/icons/cross.png",
                     cls:"x-btn-text-icon",
-                    handler: function(){
-                        tagWindow.hide();
-                    }.createDelegate(this)
+                    scope:this,
+                    handler: function() { 
+                        this.tagWindow.hide() 
+                    }
             }];
 
-            tagWindow = new Ext.Window({
+            this.tagWindow = new Ext.Window({
                 id:'tag-win',
                 layout:'fit',
                 width:450,
-                height:300,
+                height:200,
                 title:"Tags",
                 closeAction:'hide',
                 modal:true,
@@ -1694,12 +1890,14 @@ ajaxfs.prototype = {
 
         }
 
-        tagWindow.show();
-        this.initTagAutoComplete();
+        this.tagWindow.show('undefined',function() {
+            Ext.get('fstags').dom.value=taglist;
+            this.initTagAutoComplete()
+        },this);
     },
 
     initTagAutoComplete : function() {
-        var oAutoComp1DS = new YAHOO.widget.DS_JSArray(oAutoCompArr);
+        var oAutoComp1DS = new YAHOO.util.LocalDataSource(oAutoCompArr);
         if(document.getElementById("fstags")) {
             var oAutoComp1 = new YAHOO.widget.AutoComplete('fstags','oAutoCompContainer1', oAutoComp1DS);
             oAutoComp1.animHoriz=false;
@@ -1710,6 +1908,8 @@ ajaxfs.prototype = {
             oAutoComp1.delimChar=",";
             oAutoComp1.allowBrowserAutocomplete=false;
             oAutoComp1.typeAhead=true;
+            oAutoComp1.useShadow=true;
+            oAutoComp1.prehighlightClassName='yui-ac-prehighlight';
             oAutoComp1.formatResult=function(oResultItem, sQuery) { 
                 var sMarkup=oResultItem[0]; 
                 return sMarkup;
@@ -1744,16 +1944,15 @@ ajaxfs.prototype = {
             shareWindow.hide();
         }
 
+        var failure = function(response) {
+            Ext.Msg.alert("Error","Sorry, we encountered an error. Please try again later.");
+        } 
+
         var sharefolder = function() {
+
             var target_folder_id = this.communityCombo.getValue();
 
-            Ext.Ajax.request({
-                url:this.xmlhttpurl+"share-folder",
-                success: sharesuccess,
-                failure: function(response) {
-                    Ext.Msg.alert("Error","Sorry, we encountered an error. Please try again later.");
-                }, params: {target_folder_id:target_folder_id,folder_id:object_id}
-            });
+            this.fsCore.doAction('sharefolder',sharesuccess, failure, null,{target_folder_id:target_folder_id,folder_id:object_id});
 
         }
 
@@ -1791,14 +1990,14 @@ ajaxfs.prototype = {
                     text: 'Ok',
                     icon:"/resources/ajaxhelper/icons/disk.png",
                     cls:"x-btn-text-icon",
-                    handler:sharefolder.createDelegate(this)
+                    scope:this,
+                    handler:sharefolder
                 },{
                     text: 'Cancel',
                     icon:"/resources/ajaxhelper/icons/cross.png",
                     cls:"x-btn-text-icon",
-                    handler: function(){
-                        shareWindow.hide();
-                    }.createDelegate(this)
+                    scope:this,
+                    handler: function(){shareWindow.hide()}
             }];
 
             shareWindow = new Ext.Window({
@@ -1987,47 +2186,46 @@ ajaxfs.prototype = {
 
         var toolbar = [
             {
-             text:"Download",
-             tooltip:"Download this revision",
-             icon:"/resources/ajaxhelper/icons/arrow_down.png",
-             cls:"x-btn-text-icon",
-             handler: function() {
-                var grid = this.revisionsWindow.findById("revisionspanel");
-                var record = grid.getSelectionModel().getSelected();
-                window.open(record.get("url"));
-                window.focus();
-             }.createDelegate(this)
+                text:"Download",
+                tooltip:"Download this revision",
+                icon:"/resources/ajaxhelper/icons/arrow_down.png",
+                cls:"x-btn-text-icon",
+                scope:this,
+                handler: function() {
+                    var grid = this.revisionsWindow.findById("revisionspanel");
+                    var record = grid.getSelectionModel().getSelected();
+                    window.open(record.get("url"));
+                    window.focus();
+                }
             }, {
-             text:"Delete",
-             tooltip:"Delete this revision",
-             icon:"/resources/ajaxhelper/icons/delete.png",
-             cls:"x-btn-text-icon",
-             handler: function() { 
-                var grid = this.revisionsWindow.findById("revisionspanel");
-                var sm = grid.getSelectionModel();
-                var record = sm.getSelected();
-                var version_id = record.get("revision_id");
-                var fstitle = record.get("title");
-                var xmlhttpurl = this.xmlhttpurl;
-                if(grid.store.getCount()==1) {
-                    Ext.Msg.alert("Warning","Sorry, you can not delete the only revision for this file. You can delete the file instead");
-                } else {
-                    Ext.Msg.confirm('Delete','Are you sure you want to delete this version of '+fstitle+' ? This action can not be reversed.',function(btn) {
-                        if(btn=="yes") {
-                            Ext.Ajax.request({
-                                url:xmlhttpurl+'delete-fileversion',
-                                params:{version_id:version_id},
-                                success:function(o) {
+                text:"Delete",
+                tooltip:"Delete this revision",
+                icon:"/resources/ajaxhelper/icons/delete.png",
+                cls:"x-btn-text-icon",
+                scope:this,
+                handler: function() { 
+                    var grid = this.revisionsWindow.findById("revisionspanel");
+                    var sm = grid.getSelectionModel();
+                    var record = sm.getSelected();
+                    var version_id = record.get("revision_id");
+                    var fstitle = record.get("title");
+                    if(grid.store.getCount()==1) {
+                        Ext.Msg.alert("Warning","Sorry, you can not delete the only revision for this file. You can delete the file instead");
+                    } else {
+                        Ext.Msg.confirm('Delete','Are you sure you want to delete this version of '+fstitle+' ? This action can not be reversed.',function(btn) {
+                            if(btn=="yes") {
+                                var success = function(o) {
                                     sm.selectPrevious();
                                     grid.store.remove(record);
-                                }, failure:function() {
+                                }
+                                var failure = function() {
                                     Ext.Msg.alert('Delete Error','Sorry an error occurred. Please try again later.')
                                 }
-                            })
-                        }
-                    })
+                                this.fsCore.doAction('delete-revision',success, failure, null,{version_id:version_id});
+                            }
+                        })
+                    }
                 }
-             }.createDelegate(this)
             }
         ];
 
@@ -2103,7 +2301,8 @@ ajaxfs.prototype = {
 
         if(panel.id == "treepanel") {
 
-            var copytext = window.location.protocol+"//"+window.location.hostname+":"+window.location.port+this.config.package_url+"?package_id="+this.config.package_id+"&folder_id="+i;
+            if(window.location.port!="") { var port = ":"+window.location.port } else { var port = "" }
+            var copytext = window.location.protocol+"//"+window.location.hostname+port+this.config.package_url+"?package_id="+this.config.package_id+"&folder_id="+i;
 
         } else {
 
@@ -2135,238 +2334,4 @@ ajaxfs.prototype = {
         }
     }
 
-}
-
-/********** UTILS *********************/
-
-/* readCookie
-read value of a cookie */
-function readCookie(name) {
-    var ca = document.cookie.split(';');
-    var nameEQ = name + "=";
-    for(var i=0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') { c = c.substring(1, c.length) }
-        if (c.indexOf(nameEQ) == 0) { return c.substring(nameEQ.length, c.length) }
-    }
-    return null;
-}
-
-/* createCookie
-used to maintain state, e.g. when login expires */
-function createCookie(name, value, days){
-    if (days) {
-        var date = new Date();
-        date.setTime(date.getTime()+(days*24*60*60*1000));
-        var expires = "; expires="+date.toGMTString();
-    } else { var expires = "" }
-    document.cookie = name+"="+value+expires+"; path=/";
-}
-
-/* read query string
-read the value of a querystring */
-function readQs(q) {
-    var query = window.location.search.substring(1);
-    var parms = query.split('&');
-    for (var i=0; i<parms.length; i++) {
-        var pos = parms[i].indexOf('=');
-        if (pos > 0) {
-            var key = parms[i].substring(0,pos);
-            var val = parms[i].substring(pos+1);
-            if (key == q) {
-                return val;
-            }
-        }
-    }
-    return null;
-}
-
-/* check Flash Version */
-function checkFlashVersion() {
-
-    var x;
-    var pluginversion;
-
-    if(navigator.plugins && navigator.mimeTypes.length){
-        x = navigator.plugins["Shockwave Flash"];
-        if(x && x.description) x = x.description;
-    } else if (Ext.isIE){
-        try {
-            x = new ActiveXObject("ShockwaveFlash.ShockwaveFlash");
-            x = x.GetVariable("$version");
-        } catch(e){}
-    }
-
-    pluginVersion = (typeof(x) == 'string') ? parseInt(x.match(/\d+/)[0]) : 0;
-
-    return pluginVersion;
-}
-
-// check if the string argument is a url
-function isURL(argvalue) {
-
-  if (argvalue.indexOf(" ") != -1)
-    return false;
-  else if (argvalue.indexOf("http://") == -1)
-    return false;
-  else if (argvalue == "http://")
-    return false;
-  else if (argvalue.indexOf("http://") > 0)
-    return false;
-
-  argvalue = argvalue.substring(7, argvalue.length);
-  if (argvalue.indexOf(".") == -1)
-    return false;
-  else if (argvalue.indexOf(".") == 0)
-    return false;
-  else if (argvalue.charAt(argvalue.length - 1) == ".")
-    return false;
-
-  if (argvalue.indexOf("/") != -1) {
-    argvalue = argvalue.substring(0, argvalue.indexOf("/"));
-    if (argvalue.charAt(argvalue.length - 1) == ".")
-      return false;
-  }
-
-  if (argvalue.indexOf(":") != -1) {
-    if (argvalue.indexOf(":") == (argvalue.length - 1))
-      return false;
-    else if (argvalue.charAt(argvalue.indexOf(":") + 1) == ".")
-      return false;
-    argvalue = argvalue.substring(0, argvalue.indexOf(":"));
-    if (argvalue.charAt(argvalue.length - 1) == ".")
-      return false;
-  }
-
-  return true;
-
-}
-
-
-/********** FLASH UPLOAD *********/
-
-
-function FileProgress(fileObj, target_id) {
-    this.file_progress_id = fileObj.id;
-
-    this.opacity = 100;
-    this.height = 0;
-
-    this.fileProgressWrapper = document.getElementById(this.file_progress_id);
-    if (!this.fileProgressWrapper) {
-        this.fileProgressWrapper = document.createElement("div");
-        this.fileProgressWrapper.className = "progressWrapper";
-        this.fileProgressWrapper.id = this.file_progress_id;
-
-        this.fileProgressElement = document.createElement("div");
-        this.fileProgressElement.className = "progressContainer";
-
-        var progressCancel = document.createElement("a");
-        progressCancel.className = "progressCancel";
-        progressCancel.href = "#";
-        progressCancel.style.visibility = "hidden";
-        progressCancel.appendChild(document.createTextNode(" "));
-
-        var progressText = document.createElement("div");
-        progressText.className = "progressName";
-        progressText.appendChild(document.createTextNode(fileObj.name));
-
-        var progressBar = document.createElement("div");
-        progressBar.className = "progressBarInProgress";
-
-        var progressStatus = document.createElement("div");
-        progressStatus.className = "progressBarStatus";
-        progressStatus.innerHTML = "&nbsp;";
-
-        this.fileProgressElement.appendChild(progressCancel);
-        this.fileProgressElement.appendChild(progressText);
-        this.fileProgressElement.appendChild(progressStatus);
-        this.fileProgressElement.appendChild(progressBar);
-
-        this.fileProgressWrapper.appendChild(this.fileProgressElement);
-
-        document.getElementById(target_id).appendChild(this.fileProgressWrapper);
-    } else {
-        this.fileProgressElement = this.fileProgressWrapper.firstChild;
-    }
-
-    this.height = this.fileProgressWrapper.offsetHeight;
-
-}
-FileProgress.prototype.SetProgress = function(percentage) {
-    this.fileProgressElement.className = "progressContainer green";
-    this.fileProgressElement.childNodes[3].className = "progressBarInProgress";
-    this.fileProgressElement.childNodes[3].style.width = percentage + "%";
-}
-FileProgress.prototype.SetComplete = function() {
-    this.fileProgressElement.className = "progressContainer blue";
-    this.fileProgressElement.childNodes[3].className = "progressBarComplete";
-    this.fileProgressElement.childNodes[3].style.width = "";
-
-    var oSelf = this;
-    setTimeout(function() { oSelf.Disappear(); }, 10000);
-}
-FileProgress.prototype.SetError = function() {
-    this.fileProgressElement.className = "progressContainer red";
-    this.fileProgressElement.childNodes[3].className = "progressBarError";
-    this.fileProgressElement.childNodes[3].style.width = "";
-
-    var oSelf = this;
-    setTimeout(function() { oSelf.Disappear(); }, 5000);
-}
-FileProgress.prototype.SetCancelled = function() {
-    this.fileProgressElement.className = "progressContainer";
-    this.fileProgressElement.childNodes[3].className = "progressBarError";
-    this.fileProgressElement.childNodes[3].style.width = "";
-
-    var oSelf = this;
-    setTimeout(function() { oSelf.Disappear(); }, 2000);
-}
-FileProgress.prototype.SetStatus = function(status) {
-    this.fileProgressElement.childNodes[2].innerHTML = status;
-}
-
-FileProgress.prototype.ToggleCancel = function(show, upload_obj) {
-    this.fileProgressElement.childNodes[0].style.visibility = show ? "visible" : "hidden";
-    if (upload_obj) {
-        var file_id = this.file_progress_id;
-        this.fileProgressElement.childNodes[0].onclick = function() { upload_obj.cancelUpload(file_id); return false; };
-    }
-}
-
-FileProgress.prototype.Disappear = function() {
-
-    var reduce_opacity_by = 15;
-    var reduce_height_by = 4;
-    var rate = 30;  // 15 fps
-
-    if (this.opacity > 0) {
-        this.opacity -= reduce_opacity_by;
-        if (this.opacity < 0) this.opacity = 0;
-
-        if (this.fileProgressWrapper.filters) {
-            try {
-                this.fileProgressWrapper.filters.item("DXImageTransform.Microsoft.Alpha").opacity = this.opacity;
-            } catch (e) {
-                // If it is not set initially, the browser will throw an error.  This will set it if it is not set yet.
-                this.fileProgressWrapper.style.filter = 'progid:DXImageTransform.Microsoft.Alpha(opacity=' + this.opacity + ')';
-            }
-        } else {
-            this.fileProgressWrapper.style.opacity = this.opacity / 100;
-        }
-    }
-
-    if (this.height > 0) {
-        this.height -= reduce_height_by;
-        if (this.height < 0) this.height = 0;
-
-        this.fileProgressWrapper.style.height = this.height + "px";
-    }
-
-    if (this.height > 0 || this.opacity > 0) {
-        var oSelf = this;
-        setTimeout(function() { oSelf.Disappear(); }, rate);
-    } else {
-        this.fileProgressWrapper.style.display = "none";
-    }
 }

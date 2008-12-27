@@ -9,11 +9,11 @@ ad_page_contract {
     newname
     object_id
     type
-    url:optional
+    {url ""}
 }
 
-# make sure user is logged in
-set user_id [auth::require_login]
+set user_id [ad_conn user_id]
+set result "{\"success\":true,\"newname\":\"$newname\",\"type\":\"$type\",\"url\":\"$url\"}"
 
 # check permissions on parent folder
 # see if the user has write
@@ -22,11 +22,9 @@ if { ![permission::permission_p -no_cache \
         -object_id $object_id \
         -privilege "write"] } {
 
-    ns_return 500 "text/html" "You do not have permission to rename."
+    ns_return 500 "text/html" "{\"success\":false,\"error\":\"You do not have permission to rename.\"}"
     ad_script_abort
 }
-
-set result "{\"success\":true }"
 
 # change the name of the give object_id
 if { [exists_and_not_null newname] } {
@@ -42,7 +40,9 @@ if { [exists_and_not_null newname] } {
             db_dml dbqd.file-storage.www.file-edit-2.edit_title {}
         }
     } on_error {
-        ns_return 500 "text/html"  "{\"success\":false,\"error\":\"$errmsg\"}"
+        ns_return 500 "text/html" "{\"success\":false,\"error\":\"$errmsg\"}"
         ad_script_abort
     }
+} else {
+    set result "{\"success\":false,\"error\":\"You must provide a new name\"}"
 }

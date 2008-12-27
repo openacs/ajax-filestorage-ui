@@ -5,31 +5,40 @@ ad_page_contract {
 } {
     Filedata:trim,notnull
     Filedata.tmpfile:tmpfile
+    {folder_id ""}
+    {user_id ""}
+    {package_id ""}
+    {filetitle ""}
+    {filedescription ""}
+    {unpack_p ""}
 }
 
-set query [ns_conn query]
-set query_set [ns_parsequery $query]
+# set query [ns_conn query]
+# set query_set [ns_parsequery $query]
+# set folder_id [ns_set get $query_set "folder_id"]
 
-set folder_id [ns_set get $query_set "folder_id"]
+ns_log notice "FOLDER_ID : $folder_id ************"
+ns_log notice "USER_ID CONN : [ad_conn user_id] *******"
+
 if ![fs_folder_p $folder_id] {
     ns_return 500 "text/html" "[_ file-storage.lt_The_specified_parent_]"
     ad_script_abort
 }
 
-set package_id [ns_set get $query_set "package_id"]
-set user_id [ns_set get $query_set "user_id"]
-set filetitle [ns_set get $query_set "filetitle"]
-set filedescription [ns_set get $query_set "filedescription"]
-set unpack_p [ns_set get $query_set "unpack_p"]
+# set package_id [ns_set get $query_set "package_id"]
+# set user_id [ns_set get $query_set "user_id"]
+# set filetitle [ns_set get $query_set "filetitle"]
+# set filedescription [ns_set get $query_set "filedescription"]
+# set unpack_p [ns_set get $query_set "unpack_p"]
 
-ns_log notice "HAM : UPLOADING FILE : $folder_id : $Filedata : $Filedata.tmpfile : $package_id : $user_id***"
+ns_log notice "HAM : RECEIVING FILE : $folder_id : $Filedata : $Filedata.tmpfile : $package_id : $user_id***"
 
 # Get the ip
 set creation_ip [ad_conn peeraddr]
 
 set action ""
 
-set result ""
+set result "OK"
 
 # Check for write permission on this folder
 # ad_require_permission $folder_id write
@@ -117,10 +126,10 @@ db_transaction {
 
 
 } on_error {
-
+    ns_log notice "ERROR $errmsg **************"
     ns_return 500 "text/html" $errmsg
     ad_script_abort
-
 }
 
-ad_return_template "add-file"
+# ad_return_template "add-file"
+ns_return 200 "text/html" $result
