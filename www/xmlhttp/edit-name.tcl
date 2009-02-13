@@ -33,7 +33,7 @@ if { [exists_and_not_null newname] } {
         if { $type == "folder" } {
             fs::rename_folder -folder_id $object_id -name $newname
         } elseif { $type == "url" } {
-            content_extlink::edit -extlink_id $object_id -url $url -label $newname -description ""
+            content::extlink::edit -extlink_id $object_id -url $url -label $newname -description ""
         } else {
             set title $newname
             set file_id $object_id
