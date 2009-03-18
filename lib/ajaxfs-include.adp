@@ -105,16 +105,13 @@
             multiple_files_msg: "#ajax-filestorage-ui.ThisIsAZip#",
             download:"#file-storage.Download#",
             download_archive: "#ajax-filestorage-ui.DownloadArchive#",
-            request_notification:'@subscribe_link',
-            unsubscribe_notification:'@unsubscribe_link',
+            request_notification:"#notifications.Notification#",
+            unsubscribe_notification:"#notifications.Unsubscribe#",
             tools:"#ajax-filestorage-ui.Tools#",
             tag:"#ajax-filestorage-ui.Tag#",
             views:"#ajax-filestorage-ui.Views#"
     }
-    Ext.onReady(function() { 
-        Ext.get("@layoutdiv;noquote@").setHeight(400,false);
-        Ext.get("@layoutdiv;noquote@").update(" ");
-    });
     var fsInstance = new ajaxfs({@options;noquote@});
+
     </script>
     </if>

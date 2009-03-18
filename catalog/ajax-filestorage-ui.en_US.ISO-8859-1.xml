@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<message_catalog package_key="ajax-filestorage-ui" package_version="0.81d" locale="en_US" charset="ISO-8859-1">
+<message_catalog package_key="ajax-filestorage-ui" package_version="1.01" locale="en_US" charset="ISO-8859-1">
 
   <msg key="Alert">Alert</msg>
   <msg key="Browse">Browse</msg>
@@ -28,7 +28,7 @@
   <msg key="File">File</msg>
   <msg key="FileList">File List</msg>
   <msg key="FileToUpload">File to upload</msg>
-  <msg key="FolderContains">This folder contains</msg>
+  <msg key="FolderContains">This folder </msg>
   <msg key="FolderNameRequired">A folder name is required</msg>
   <msg key="for_upload_to">for upload to</msg>
   <msg key="InvalidUrl">&lt;b&gt;URL&lt;/b&gt; is not a valid url.</msg>

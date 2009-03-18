@@ -303,7 +303,10 @@ ajaxfs.prototype = {
 
         var layoutitems = [this.createLeft(),this.createRight()]
 
-        if (this.config != null && this.config.layoutdiv) { 
+        if (this.config != null && this.config.layoutdiv) {
+
+            Ext.get(this.config.layoutdiv).setHeight(400,false);
+            Ext.get(this.config.layoutdiv).update(" ");
 
             this.layout = new Ext.Panel({
                 id:"fs-ui",
@@ -407,7 +410,7 @@ ajaxfs.prototype = {
 
                             this.fsCore.doAction('checknotif',success, failure, null,{ object_id:treepanel.getSelectionModel().getSelectedNode().attributes["id"] });
                             Ext.getCmp('mnNotif').enable();
-
+                            if(this.share_folders_p) { Ext.getCmp('mnShare').enable() }
                             break;
                         case "symlink":
                             Ext.getCmp('mnOpen').setText(acs_lang_text.open || 'Open');
@@ -1522,7 +1525,7 @@ ajaxfs.prototype = {
 
         if(this.upldWindow == null) {
 
-            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || Ext.isLinux) {
+            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || Ext.isLinux || Ext.isMac) {
 
                 /*** Single File Upload *******/
                 mode = 'single';
@@ -2227,7 +2230,7 @@ ajaxfs.prototype = {
                                 }
                                 this.fsCore.doAction('delete-revision',success, failure, null,{version_id:version_id});
                             }
-                        })
+                        },this)
                     }
                 }
             }
