@@ -23,7 +23,7 @@ if { ![permission::permission_p -object_id $folder_id -privilege "write"] } {
 
 } else {
 
-    set item_id [content::extlink::new -url $fsurl -label $fstitle -description $fsdescription -parent_id $folder_id]
+    set item_id [content_extlink::new -url $fsurl -label $fstitle -description $fsdescription -parent_id $folder_id]
     
     # Analogous as for files (see file-add-2) we know the user has write permission to this folder, 
     # but they may not have admin privileges.

@@ -109,7 +109,9 @@
             unsubscribe_notification:"#notifications.Unsubscribe#",
             tools:"#ajax-filestorage-ui.Tools#",
             tag:"#ajax-filestorage-ui.Tag#",
-            views:"#ajax-filestorage-ui.Views#"
+            views:"#ajax-filestorage-ui.Views#",
+            no : "#acs-kernel.common_no#",
+            folders : "#ajax-filestorage-ui.Folders#"
     }
     var fsInstance = new ajaxfs({@options;noquote@});
 

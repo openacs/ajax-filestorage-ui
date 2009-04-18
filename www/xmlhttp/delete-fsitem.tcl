@@ -58,3 +58,6 @@ db_transaction {
 
 }
 
+ns_return 200 "text/html" $result
+ad_script_abort
+

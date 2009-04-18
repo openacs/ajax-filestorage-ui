@@ -608,7 +608,7 @@ ajaxfs.prototype = {
 
         var treepanel = new Ext.tree.TreePanel({
             id:'treepanel',
-            title:'Folders',
+            title:acs_lang_text.folders || 'Folders',
             autoScroll:true,
             animate:true,
             enableDrag:false,
@@ -1112,6 +1112,10 @@ ajaxfs.prototype = {
         gridpanel.store.baseParams['package_id'] = this.config.package_id;
         // gridpanel.store.baseParams['tag_id'] = '';
 
+        gridpanel.store.on('load',function(store,records) {
+            node.attributes.attributes.size = records.length+" items";
+        },{single:true})
+
         // if the tree node is still loading, wait for it to expand before loading the grid
         if(node.loading) {
             node.on("expand", function() { this.store.load() }, gridpanel, {single:true});
@@ -1147,6 +1151,8 @@ ajaxfs.prototype = {
 
         var err_msg_txt = acs_lang_text.confirm_delete || "Are you sure you want to delete ";
         var err_msg_txt2 = acs_lang_text.foldercontains || "This folder ";
+        var error_msg_txt = acs_lang_text.delete_error || "Sorry,there was an error trying to delete this item.";
+
         var treepanel = this.layout.findById('treepanel');
         if(grid.id=="filepanel") { 
             var filepanel = grid;
@@ -1247,17 +1253,17 @@ ajaxfs.prototype = {
                         var selectednode = treepanel.getNodeById(treenodeid);
                         if (selectednode) {
                             var parentnode = selectednode.parentNode;
-                            parentnode.fireEevent("click",parentnode);
                             parentnode.removeChild(selectednode);
                         }
                     }
                 }
             } else {
-                ext.msg.alert(acs_lang_text.error || "error","sorry, we encountered an error.");
+                ext.msg.alert(acs_lang_text.error || "Error","sorry, we encountered an error.");
             }
         }
 
-        var failure = function() {
+        var failure = function(o) {
+            var resultObj = Ext.decode(o.responseText);
             Ext.Msg.alert(acs_lang_text.error || "Error",error_msg_txt + "<br><br><font color='red'>"+resultObj.error+"</font>");
         }
 
@@ -1500,9 +1506,11 @@ ajaxfs.prototype = {
                 file_types : "*.*",
                 button_placeholder_id:"btnSwfUpload",
                 button_image_url : "/resources/ajax-filestorage-ui/resources/FullyTransparent_65x29.png",
-                button_text:'&nbsp;<b>BROWSE</b>',
+                button_text:'BROWSE',
                 button_width: 61,
                 button_height: 16,
+                button_text_left_padding : 3, 
+                button_text_top_padding : 0, 
                 file_dialog_start_handler : fileDialogStart,
                 file_queued_handler : fileQueued,
                 file_queue_error_handler : fileQueueError,
@@ -1525,7 +1533,7 @@ ajaxfs.prototype = {
 
         if(this.upldWindow == null) {
 
-            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || Ext.isLinux || Ext.isMac) {
+            if (!this.config.multi_file_upload || checkFlashVersion() < 10) {
 
                 /*** Single File Upload *******/
                 mode = 'single';
@@ -1567,7 +1575,7 @@ ajaxfs.prototype = {
 
                 var msg_txt = acs_lang_text.upload_intro || "Click <b>Upload</b> to select a file to upload to the selected folder on the tree.";
                 var modal = false;
-                var title = "Upload Files";
+                var title = acs_lang_text.uploadfile ||"Upload Files";
 
                 var uploadBody = new Ext.Panel({
                     id:'form_multi_addfile',
@@ -1576,9 +1584,9 @@ ajaxfs.prototype = {
                     html: "<div id=\"upldMsg\">"+msg_txt+"<hr></div><div class=\"flash\" id=\"fsuploadprogress\"></div>"
                 });
 
-                var uploadBtns = [
-                    '<span id=\"btnSwfUpload\"></span>',
-                    {
+                var uploadBtns = [{
+                        text:'<span id=\"btnSwfUpload\"></span>'
+                    }, {
                         text: acs_lang_text.upload || 'Upload',
                         scope:this,
                         handler: function() {
@@ -1621,7 +1629,7 @@ ajaxfs.prototype = {
             }
 
         } else {
-            if (!this.config.multi_file_upload || checkFlashVersion() < 9 || Ext.isLinux) {
+            if (!this.config.multi_file_upload || checkFlashVersion() < 10 ) {
                 document.getElementById('newfileform').reset();
                 document.getElementById('newfileform').folder_id.value = this.currentfolder;
             }
@@ -1741,6 +1749,8 @@ ajaxfs.prototype = {
 
     // rename a file or folder in the right panel
     renameItem : function(panel,i,e) {
+
+        var error_msg_txt = acs_lang_text.permission_denied_error || "Sorry, you do not have permission to rename this folder.";
 
         if(panel.id == "treepanel") {
 

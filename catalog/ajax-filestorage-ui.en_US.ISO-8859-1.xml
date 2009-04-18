@@ -50,4 +50,5 @@
   <msg key="Uploading">Uploading ...</msg>
   <msg key="Views">Views</msg>
   <msg key="Zip_file">Zip File (Will be extracted after upload)</msg>
+  <msg key="Folders">Folders</msg>
 </message_catalog>

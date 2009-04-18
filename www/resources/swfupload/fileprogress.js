@@ -124,6 +124,7 @@ FileProgress.prototype.Disappear = function() {
         setTimeout(function() { oSelf.Disappear(); }, rate);
     } else {
         this.fileProgressWrapper.style.display = "none";
+        this.fileProgressWrapper.parentNode.removeChild(this.fileProgressWrapper);
     }
 }
 
