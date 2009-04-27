@@ -542,6 +542,7 @@ ajaxfs.prototype = {
         })
 
         var tbutton = {
+            id:'btnToolsMenu',
             text:'Tools',
             iconCls:'toolsmenu',
             menu: menu
@@ -553,23 +554,41 @@ ajaxfs.prototype = {
     // create the toolbar for this instance of ajaxfs
 
     createToolbar : function() {
-        var rootnode = this.config.treerootnode;
-        var toolbar = [];
-        if(rootnode.attributes["write_p"] == 't') {
-            var toolbar = [
-                ' ',
-                {text: acs_lang_text.newfolder || 'New Folder', tooltip: acs_lang_text.newfolder || 'New Folder', icon: '/resources/ajaxhelper/icons/folder_add.png', cls : 'x-btn-text-icon', scope:this,handler: this.addFolder},
-                {id:'btnUploadFile', text: acs_lang_text.uploadfile || 'Upload Files', tooltip: acs_lang_text.uploadfile || 'Upload Files', icon: '/resources/ajaxhelper/icons/page_add.png', cls : 'x-btn-text-icon', scope:this, handler: this.addFile}
-            ];
-            if(this.create_url_p) {
-                toolbar.push({text: acs_lang_text.createurl || 'Create Url',tooltip: acs_lang_text.createurl || 'Create Url', icon: '/resources/ajaxhelper/icons/page_link.png', cls : 'x-btn-text-icon', scope:this, handler: this.addUrl});
-            }
-            toolbar.push({text: acs_lang_text.deletefs || 'Delete', tooltip: acs_lang_text.deletefs || 'Delete', icon: '/resources/ajaxhelper/icons/delete.png', cls : 'x-btn-text-icon', scope:this, handler: this.delItem });
-            toolbar.push(this.createToolsMenu());
-            toolbar.push('->');
+        var toolbar = [
+            ' ',
+            {id:'btnNewFolder',text: acs_lang_text.newfolder || 'New Folder', tooltip: acs_lang_text.newfolder || 'New Folder', icon: '/resources/ajaxhelper/icons/folder_add.png', cls : 'x-btn-text-icon', scope:this,handler: this.addFolder},
+            {id:'btnUploadFile', text: acs_lang_text.uploadfile || 'Upload Files', tooltip: acs_lang_text.uploadfile || 'Upload Files', icon: '/resources/ajaxhelper/icons/page_add.png', cls : 'x-btn-text-icon', scope:this, handler: this.addFile}
+        ];
+        if(this.create_url_p) {
+            toolbar.push({id:'btnCreateUrl',text: acs_lang_text.createurl || 'Create Url',tooltip: acs_lang_text.createurl || 'Create Url', icon: '/resources/ajaxhelper/icons/page_link.png', cls : 'x-btn-text-icon', scope:this, handler: this.addUrl});
         }
+        toolbar.push({id:'btnDelete',text: acs_lang_text.deletefs || 'Delete', tooltip: acs_lang_text.deletefs || 'Delete', icon: '/resources/ajaxhelper/icons/delete.png', cls : 'x-btn-text-icon', scope:this, handler: this.delItem });
+        toolbar.push(this.createToolsMenu());
+        toolbar.push('->');
         toolbar.push({tooltip: 'This may take a few minutes if you have a lot of files', text: acs_lang_text.download_archive || 'Download Archive', icon: '/resources/ajaxhelper/icons/arrow_down.png', cls : 'x-btn-text-icon', scope:this, handler: function() { this.downloadArchive(rootnode.id) } });
         return toolbar;
+    },
+
+    // check permissions of the given tree node and enable/disable toolbars as needed
+    
+    resetToolbar : function(node) {
+        if(node.attributes.attributes["write_p"] == 't') {
+            Ext.getCmp('btnNewFolder').show();
+            Ext.getCmp('btnUploadFile').show();
+            Ext.getCmp('btnDelete').show();
+            Ext.getCmp('btnToolsMenu').show();
+            if(this.create_url_p) {
+                Ext.getCmp('btnCreateUrl').show();
+            }
+        } else {
+            Ext.getCmp('btnNewFolder').hide();
+            Ext.getCmp('btnUploadFile').hide();
+            Ext.getCmp('btnDelete').hide();
+            Ext.getCmp('btnToolsMenu').hide();
+            if(this.create_url_p) {
+                Ext.getCmp('btnCreateUrl').hide();
+            }
+        }
     },
 
     // creates the left panel as an accordion, top panel has the folders, bottom panel has the tags
@@ -1111,6 +1130,8 @@ ajaxfs.prototype = {
         gridpanel.store.baseParams['folder_id'] = node.id;
         gridpanel.store.baseParams['package_id'] = this.config.package_id;
         // gridpanel.store.baseParams['tag_id'] = '';
+
+        this.resetToolbar(node);
 
         gridpanel.store.on('load',function(store,records) {
             node.attributes.attributes.size = records.length+" items";
