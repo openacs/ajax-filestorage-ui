@@ -575,22 +575,34 @@ ajaxfs.prototype = {
         if(node.attributes.attributes["write_p"] == 't') {
             Ext.getCmp('btnNewFolder').show();
             Ext.getCmp('btnUploadFile').show();
-            Ext.getCmp('btnDelete').show();
-            Ext.getCmp('btnToolsMenu').show();
             if(this.create_url_p) {
                 Ext.getCmp('btnCreateUrl').show();
             }
+            //btnToolsMenu elements
+            Ext.getCmp('mnRename').show();
         } else {
             Ext.getCmp('btnNewFolder').hide();
             Ext.getCmp('btnUploadFile').hide();
+            Ext.getCmp('btnCreateUrl').hide();
+            //btnToolsMenu elements
+            Ext.getCmp('mnRename').hide();
+        }
+              
+        if(node.attributes.attributes["delete_p"] == 't') {
+            Ext.getCmp('btnDelete').show();
+        } else {
             Ext.getCmp('btnDelete').hide();
-            Ext.getCmp('btnToolsMenu').hide();
-            if(this.create_url_p) {
-                Ext.getCmp('btnCreateUrl').hide();
-            }
+        }
+
+        if(node.attributes.attributes["admin_p"] == 't') {
+            Ext.getCmp('mnPerms').show();
+            Ext.getCmp('mnProp').show();
+        } else {
+            Ext.getCmp('mnPerms').hide();
+            Ext.getCmp('mnProp').hide();
         }
     },
-
+ 
     // creates the left panel as an accordion, top panel has the folders, bottom panel has the tags
 
     createLeft : function() {
@@ -832,6 +844,7 @@ ajaxfs.prototype = {
                     this.loadTaggedFiles(el.id);
                 }
             },this);
+                alert(el.tagName);
 
         }
 
@@ -885,6 +898,8 @@ ajaxfs.prototype = {
         var proxy = this.fsCore.createFilePanelProxy();
 
         var colModel = new Ext.grid.ColumnModel(cols);
+                    {name:'delete_p'},
+                    {name:'admin_p'},
 
         var dataModel = new Ext.data.Store({proxy: proxy, reader: reader, remoteSort: true});
 
@@ -966,6 +981,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
+                id: 'ctxMnOpen',
                 text: 'Tag',
                 icon: '/resources/ajaxhelper/icons/tag_blue.png',
                 scope:this,
@@ -974,6 +990,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
+                id: 'ctxMnTag',
                 text: 'Views',
                 icon: '/resources/ajaxhelper/icons/camera.png',
                 scope:this,
@@ -982,6 +999,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
+                id: 'ctxMnView',
                 text: acs_lang_text.deletefs || 'Delete',
                 icon: '/resources/ajaxhelper/icons/delete.png',
                 scope:this,
@@ -990,6 +1008,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
+                id: 'ctxMnDelete',
                 text: acs_lang_text.rename || 'Rename',
                 icon: '/resources/ajaxhelper/icons/page_edit.png',
                 scope:this,
@@ -998,6 +1017,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
+                id: 'ctxMnRename',
                 text: acs_lang_text.linkaddress || 'Copy Link Address',
                 icon: '/resources/ajaxhelper/icons/page_copy.png',
                 scope:this,
@@ -1006,6 +1026,7 @@ ajaxfs.prototype = {
                 }
             }), 
             new Ext.menu.Item({
+                id: 'ctxMnCopyLink',
                 text: acs_lang_text.permissions || 'Permissions',
                 icon: '/resources/ajaxhelper/icons/group_key.png',
                 scope:this,
@@ -1014,6 +1035,7 @@ ajaxfs.prototype = {
                 }
             }), 
             new Ext.menu.Item({
+                id: 'ctxMnPerms',
                 text: acs_lang_text.properties || 'Properties',
                 icon: '/resources/ajaxhelper/icons/page_edit.png',
                 scope:this,
@@ -1022,6 +1044,7 @@ ajaxfs.prototype = {
                 }
             }), 
             new Ext.menu.Item({
+                id: 'ctxMnProp',
                 text: acs_lang_text.download_archive || 'Download archive',
                 icon: '/resources/ajaxhelper/icons/arrow_down.png',
                 scope:this,
@@ -1030,6 +1053,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
+                id: 'ctxMnArch',
                 text: acs_lang_text.sharefolder || 'Share Folder',
                 icon: '/resources/ajaxhelper/icons/group_link.png',
                 scope:this,
@@ -1038,74 +1062,79 @@ ajaxfs.prototype = {
                 }
             })  ]
         });
+                id: 'ctxMnShare',
 
         // disable open/download, rename, copy link, permissions and revisions if more than one node item from the view is selected
         if (grid.getSelectionModel().getCount() > 1) {
-            this.contextmenu.items.items[0].hide();
-            this.contextmenu.items.items[1].hide();
-            this.contextmenu.items.items[2].hide();
-            this.contextmenu.items.items[3].show();
-            this.contextmenu.items.items[4].hide();
-            this.contextmenu.items.items[5].hide();
-            this.contextmenu.items.items[6].hide();
-            this.contextmenu.items.items[7].hide();
-            this.contextmenu.items.items[8].hide();
-            this.contextmenu.items.items[9].hide();
+            Ext.getCmp('ctxMnOpen').hide();
+            Ext.getCmp('ctxMnTag').hide();
+            Ext.getCmp('ctxMnView').hide();
+            Ext.getCmp('ctxMnDelete').hide();
+            Ext.getCmp('ctxMnRename').hide();
+            Ext.getCmp('ctxMnCopyLink').hide();
+            Ext.getCmp('ctxMnPerms').hide();
+            Ext.getCmp('ctxMnProp').hide();
+            Ext.getCmp('ctxMnArch').hide();
+            Ext.getCmp('ctxMnShare').hide();
         } else {
-            this.contextmenu.items.items[0].show();
-            this.contextmenu.items.items[2].show();
-            this.contextmenu.items.items[3].show();
-            this.contextmenu.items.items[4].show();
-            this.contextmenu.items.items[5].show();
-            this.contextmenu.items.items[6].show();
-            
+            Ext.getCmp('ctxMnOpen').show();
+            Ext.getCmp('ctxMnView').show();
+            Ext.getCmp('ctxMnDelete').show();
+            Ext.getCmp('ctxMnRename').show();
+            Ext.getCmp('ctxMnCopyLink').show();
+            Ext.getCmp('ctxMnPerms').show();
             switch (object_type) {
                 case "folder" :
-                    this.contextmenu.items.items[1].hide();
-                    this.contextmenu.items.items[7].hide();
-                    this.contextmenu.items.items[8].show();
+                    Ext.getCmp('ctxMnTag').hide();
+                    Ext.getCmp('ctxMnProp').hide();
+                    Ext.getCmp('ctxMnArch').show();
                     if (treepanel.getNodeById(recordid).attributes.attributes.type == "symlink") {
-                        this.contextmenu.items.items[9].hide();
+                        Ext.getCmp('ctxMnShare').hide();
                     } else {
-                        this.contextmenu.items.items[9].show();
+                        Ext.getCmp('ctxMnShare').show();
                     }
                     break;
                 case "url" :
-                    this.contextmenu.items.items[1].show();
-                    this.contextmenu.items.items[7].hide();
-                    this.contextmenu.items.items[8].hide();
-                    this.contextmenu.items.items[9].hide();
+                    Ext.getCmp('ctxMnTag').show();
+                    Ext.getCmp('ctxMnProp').hide();
+                    Ext.getCmp('ctxMnArch').hide();
+                    Ext.getCmp('ctxMnShare').hide();
                     break;
                 case "symlink":
-                    this.contextmenu.items.items[4].hide();
-                    this.contextmenu.items.items[9].hide();
+                    Ext.getCmp('ctxMnRename').hide();
+                    Ext.getCmp('ctxMnShare').hide();
                     break;
                 default:
-                    this.contextmenu.items.items[1].show();
-                    this.contextmenu.items.items[7].show();
-                    this.contextmenu.items.items[8].hide();
-                    this.contextmenu.items.items[9].hide();
+                    Ext.getCmp('ctxMnTag').show();
+                    Ext.getCmp('ctxMnProp').show();
+                    Ext.getCmp('ctxMnArch').hide();
+                    Ext.getCmp('ctxMnShare').hide();
             }
-
-
         }
 
         // always disable if shared folders are not supported
         if(!this.share_folders_p) {
-            this.contextmenu.items.items[9].hide();
+            Ext.getCmp('ctxMnShare').hide();
         }
 
         // always disable if views package is not supported
         if(!this.views_p) {
-            this.contextmenu.items.items[2].hide();
+            Ext.getCmp('ctxMnView').hide();
         }
 
-        if(rootnode.attributes["write_p"] == 'f') {
-            this.contextmenu.items.items[1].hide();
-            this.contextmenu.items.items[3].hide();
-            this.contextmenu.items.items[6].hide();
-            this.contextmenu.items.items[7].hide();
-            this.contextmenu.items.items[9].hide();
+        if(record.get("write_p") != true) {
+            Ext.getCmp('ctxMnTag').hide();
+            Ext.getCmp('ctxMnShare').hide();
+            Ext.getCmp('ctxMnRename').hide();
+        }
+
+        if(record.get("delete_p") != true) {
+            Ext.getCmp('ctxMnDelete').hide();
+        }
+
+        if(record.get("admin_p") != true) {
+            Ext.getCmp('ctxMnPerms').hide();
+            Ext.getCmp('ctxMnProp').hide();
         }
 
         var coords = e.getXY();

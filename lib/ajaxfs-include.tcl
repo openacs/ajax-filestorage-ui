@@ -82,13 +82,12 @@ if { [exists_and_not_null package_id] } {
     regsub -all {"} $instance_name {\"} instance_name
     regsub -all {"} $roottext {\"} roottext
 
-    set write_p [permission::permission_p -no_cache \
-            -party_id [ad_conn user_id] \
-            -object_id ${rootfolder_id} \
-            -privilege "write"]
-    if { $write_p } { set rootwrite_p "t" } else { set rootwrite_p "f" }
+    if {[permission::permission_p -no_cache -party_id [ad_conn user_id] -object_id ${rootfolder_id} -privilege "write"]}  { set rootwrite_p "t" }  else { set rootwrite_p "f" }
+#    if {[permission::permission_p -no_cache -party_id [ad_conn user_id] -object_id ${rootfolder_id} -privilege "delete"]} { set rootdelete_p "t" } else { set rootdelete_p "f" }
+set rootdelete_p "f";   # Community root folder doesn't been delete
+    if {[permission::permission_p -no_cache -party_id [ad_conn user_id] -object_id ${rootfolder_id} -privilege "admin"]}  { set rootadmin_p "t" }  else { set rootadmin_p "f" }
 
-    lappend options "treerootnode:{text:\"$roottext\", id:\"$rootfolder_id\",\"attributes\":{\"write_p\":\"$rootwrite_p\"}}"
+    lappend options "treerootnode:{text:\"$roottext\", id:\"$rootfolder_id\",\"attributes\":{\"write_p\":\"$rootwrite_p\",\"delete_p\":\"$rootdelete_p\",\"admin_p\":\"$rootadmin_p\"}}"
 
     lappend options "package_id:$package_id"
     lappend options "package_url:\"[apm_package_url_from_id $package_id]\""

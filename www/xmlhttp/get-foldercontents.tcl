@@ -95,8 +95,7 @@ if { [exists_and_not_null tag_id] } {
     set query ""
 }
 
-
-db_multirow -extend { filename icon last_modified_pretty content_size_pretty download_url linkurl object_counter file_list_start file_list_end write_p tags symlink_id qtip} contents $query_name $query  {
+db_multirow -extend { filename icon last_modified_pretty content_size_pretty download_url linkurl object_counter file_list_start file_list_end write_p delete_p admin_p tags symlink_id qtip} contents $query_name {} {
 
     # cleanup :
     # remove double quotes, replace with single quotes
@@ -232,7 +231,10 @@ db_multirow -extend { filename icon last_modified_pretty content_size_pretty dow
         set tags ""
     }
 
-    if { [permission::permission_p -party_id $viewing_user_id -object_id $object_id -privilege "write"] == "t" } { set write_p "true" } else { set write_p "false" }
+    if { [permission::permission_p -party_id $viewing_user_id -object_id $object_id -privilege "write"] } { set write_p "true" } else { set write_p "false" }
+    if { [permission::permission_p -party_id $viewing_user_id -object_id $object_id -privilege "delete"] } { set delete_p "true" } else { set delete_p "false" }
+    if { [permission::permission_p -party_id $viewing_user_id -object_id $object_id -privilege "admin"] } { set admin_p "true" } else { set admin_p "false" }
+
 
     incr counter
 

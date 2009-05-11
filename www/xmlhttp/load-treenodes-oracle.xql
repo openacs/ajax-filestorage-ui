@@ -17,10 +17,9 @@
                 fs_objects.parent_id,
                 fs_objects.content_size,
                 fs_objects.type,
-                case when fs_objects.type = 'url'
-                    then ( select acs_permission.permission_p(fs_objects.object_id, :viewing_user_id, 'write') from dual)
-                    else 't'
-                end as write_p
+                (select acs_permission.permission_p(fs_objects.object_id, :viewing_user_id, 'write') from dual) as write_p,
+                (select acs_permission.permission_p(fs_objects.object_id, :viewing_user_id, 'delete') from dual) as delete_p,
+                (select acs_permission.permission_p(fs_objects.object_id, :viewing_user_id, 'admin') from dual) as admin_p
         from fs_objects
         where fs_objects.type in ('folder','symlink')
           and fs_objects.parent_id = :node
