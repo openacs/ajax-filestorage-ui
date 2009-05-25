@@ -893,13 +893,13 @@ ajaxfs.prototype = {
                     {name:'write_p'},
                     {name:'symlink_id'},
                     {name:'size'},
-                    {name:'lastmodified'}] );
+                    {name:'lastmodified'},
+                    {name:'write_p'},
+                    {name:'admin_p'}] );
 
         var proxy = this.fsCore.createFilePanelProxy();
 
         var colModel = new Ext.grid.ColumnModel(cols);
-                    {name:'delete_p'},
-                    {name:'admin_p'},
 
         var dataModel = new Ext.data.Store({proxy: proxy, reader: reader, remoteSort: true});
 
@@ -973,6 +973,7 @@ ajaxfs.prototype = {
             id: 'rightclickmenu',
             items: [
             new Ext.menu.Item({
+                id: 'ctxMnOpen',
                 text: openitem_txt,
                 icon: '/resources/ajaxhelper/icons/page_white.png',
                 scope:this,
@@ -981,7 +982,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
-                id: 'ctxMnOpen',
+                id: 'ctxMnTag',
                 text: 'Tag',
                 icon: '/resources/ajaxhelper/icons/tag_blue.png',
                 scope:this,
@@ -990,7 +991,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
-                id: 'ctxMnTag',
+                id: 'ctxMnView',
                 text: 'Views',
                 icon: '/resources/ajaxhelper/icons/camera.png',
                 scope:this,
@@ -999,7 +1000,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
-                id: 'ctxMnView',
+                id: 'ctxMnDelete',
                 text: acs_lang_text.deletefs || 'Delete',
                 icon: '/resources/ajaxhelper/icons/delete.png',
                 scope:this,
@@ -1008,7 +1009,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
-                id: 'ctxMnDelete',
+                id: 'ctxMnRename',
                 text: acs_lang_text.rename || 'Rename',
                 icon: '/resources/ajaxhelper/icons/page_edit.png',
                 scope:this,
@@ -1017,7 +1018,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
-                id: 'ctxMnRename',
+                id: 'ctxMnCopyLink',
                 text: acs_lang_text.linkaddress || 'Copy Link Address',
                 icon: '/resources/ajaxhelper/icons/page_copy.png',
                 scope:this,
@@ -1026,7 +1027,7 @@ ajaxfs.prototype = {
                 }
             }), 
             new Ext.menu.Item({
-                id: 'ctxMnCopyLink',
+                id: 'ctxMnPerms',
                 text: acs_lang_text.permissions || 'Permissions',
                 icon: '/resources/ajaxhelper/icons/group_key.png',
                 scope:this,
@@ -1035,7 +1036,7 @@ ajaxfs.prototype = {
                 }
             }), 
             new Ext.menu.Item({
-                id: 'ctxMnPerms',
+                id: 'ctxMnProp',
                 text: acs_lang_text.properties || 'Properties',
                 icon: '/resources/ajaxhelper/icons/page_edit.png',
                 scope:this,
@@ -1044,7 +1045,7 @@ ajaxfs.prototype = {
                 }
             }), 
             new Ext.menu.Item({
-                id: 'ctxMnProp',
+                id: 'ctxMnArch',
                 text: acs_lang_text.download_archive || 'Download archive',
                 icon: '/resources/ajaxhelper/icons/arrow_down.png',
                 scope:this,
@@ -1053,7 +1054,7 @@ ajaxfs.prototype = {
                 }
             }),
             new Ext.menu.Item({
-                id: 'ctxMnArch',
+                id: 'ctxMnShare',
                 text: acs_lang_text.sharefolder || 'Share Folder',
                 icon: '/resources/ajaxhelper/icons/group_link.png',
                 scope:this,
@@ -1062,7 +1063,6 @@ ajaxfs.prototype = {
                 }
             })  ]
         });
-                id: 'ctxMnShare',
 
         // disable open/download, rename, copy link, permissions and revisions if more than one node item from the view is selected
         if (grid.getSelectionModel().getCount() > 1) {
