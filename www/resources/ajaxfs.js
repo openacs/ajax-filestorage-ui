@@ -844,7 +844,6 @@ ajaxfs.prototype = {
                     this.loadTaggedFiles(el.id);
                 }
             },this);
-                alert(el.tagName);
 
         }
 
@@ -1902,7 +1901,7 @@ ajaxfs.prototype = {
             node.data.tags = Ext.get('fstags').getValue();
             node.commit();
             tagcloudpanel.load({url:xmlhttpurl+'get-tagcloud',params:{package_id:package_id}});
-            tagWindow.hide();
+            this.tagWindow.hide();
         }
 
         var failure = function(response) {
@@ -1910,9 +1909,7 @@ ajaxfs.prototype = {
         }
 
         var savetags = function() {
-
-            this.fsCore.doAction('tag',success, failure, null,{ object_id:node.id,package_id:package_id,tags:Ext.get('fstags').getValue()});
-
+            this.fsCore.doAction('tag',success, failure, null,{ object_id:node.id,package_id:package_id,tags:Ext.get('fstags').getValue()},this);
         }
 
         if(tagWindow == null) {
@@ -1928,8 +1925,7 @@ ajaxfs.prototype = {
                     text: 'Ok',
                     icon:"/resources/ajaxhelper/icons/disk.png",
                     cls:"x-btn-text-icon",
-                    scope:this,
-                    handler:savetags
+                    scope:this
                 },{
                     text: 'Cancel',
                     icon:"/resources/ajaxhelper/icons/cross.png",
@@ -1959,6 +1955,7 @@ ajaxfs.prototype = {
 
         this.tagWindow.show('undefined',function() {
             Ext.get('fstags').dom.value=taglist;
+            this.tagWindow.buttons[0].setHandler(savetags,this);
             this.initTagAutoComplete()
         },this);
     },
