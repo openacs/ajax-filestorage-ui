@@ -247,7 +247,7 @@ ajaxfs.prototype = {
     isSessionExpired : function(conn,response,options) {
 
         // check if we are still logged in
-        if ( readCookie("ad_user_login") == null ) {
+        if ( readCookie("ad_session_id") == null ) {
             Ext.get(document.body).mask(acs_lang_text.sessionexpired || "Your session has expired. You need to login again. <br>You will be redirected to a login page shortly");
             var params = '';
             if(this.currentfolder != null) {
