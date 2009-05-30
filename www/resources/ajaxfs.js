@@ -1416,15 +1416,15 @@ ajaxfs.prototype = {
             
                     switch (errorCode) {
                     case SWFUpload.QUEUE_ERROR.FILE_EXCEEDS_SIZE_LIMIT:
-                        progress.setStatus("File is too big.");
+                        progress.SetStatus("File is too big.");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: File too big, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
                         break;
                     case SWFUpload.QUEUE_ERROR.ZERO_BYTE_FILE:
-                        progress.setStatus("Cannot upload Zero Byte files.");
+                        progress.SetStatus("Cannot upload Zero Byte files.");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Zero byte file, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
                         break;
                     case SWFUpload.QUEUE_ERROR.INVALID_FILETYPE:
-                        progress.setStatus("Invalid File Type.");
+                        progress.SetStatus("Invalid File Type.");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Invalid File Type, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
                         break;
                     case SWFUpload.QUEUE_ERROR.QUEUE_LIMIT_EXCEEDED:
@@ -1432,7 +1432,7 @@ ajaxfs.prototype = {
                         break;
                     default:
                         if (file !== null) {
-                            progress.setStatus("Unhandled Error");
+                            progress.SetStatus("Unhandled Error");
                         }
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: " + errorCode + ", File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
                         break;
@@ -1489,46 +1489,46 @@ ajaxfs.prototype = {
             
                     switch (errorCode) {
                     case SWFUpload.UPLOAD_ERROR.HTTP_ERROR:
-                        progress.setStatus("Upload Error: " + message);
+                        progress.SetStatus("Upload Error: " + message);
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: HTTP Error, File name: " + file.name + ", Message: " + message);
                         break;
                     case SWFUpload.UPLOAD_ERROR.MISSING_UPLOAD_URL:
-                        progress.setStatus("Configuration Error");
+                        progress.SetStatus("Configuration Error");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: No backend file, File name: " + file.name + ", Message: " + message);
                         break;
                     case SWFUpload.UPLOAD_ERROR.UPLOAD_FAILED:
-                        progress.setStatus("Upload Failed.");
+                        progress.SetStatus("Upload Failed.");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Upload Failed, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
                         break;
                     case SWFUpload.UPLOAD_ERROR.IO_ERROR:
-                        progress.setStatus("Server (IO) Error");
+                        progress.SetStatus("Server (IO) Error");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: IO Error, File name: " + file.name + ", Message: " + message);
                         break;
                     case SWFUpload.UPLOAD_ERROR.SECURITY_ERROR:
-                        progress.setStatus("Security Error");
+                        progress.SetStatus("Security Error");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Security Error, File name: " + file.name + ", Message: " + message);
                         break;
                     case SWFUpload.UPLOAD_ERROR.UPLOAD_LIMIT_EXCEEDED:
-                        progress.setStatus("Upload limit exceeded.");
+                        progress.SetStatus("Upload limit exceeded.");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: Upload Limit Exceeded, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
                         break;
                     case SWFUpload.UPLOAD_ERROR.SPECIFIED_FILE_ID_NOT_FOUND:
-                        progress.setStatus("File not found.");
+                        progress.SetStatus("File not found.");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: The file was not found, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
                         break;
                     case SWFUpload.UPLOAD_ERROR.FILE_VALIDATION_FAILED:
-                        progress.setStatus("Failed Validation.  Upload skipped.");
+                        progress.SetStatus("Failed Validation.  Upload skipped.");
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: File Validation Failed, File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
                         break;
                     case SWFUpload.UPLOAD_ERROR.FILE_CANCELLED:
-                        progress.setStatus("Cancelled");
-                        progress.setCancelled();
+                        progress.SetStatus("Cancelled");
+                        progress.SetCancelled();
                         break;
                     case SWFUpload.UPLOAD_ERROR.UPLOAD_STOPPED:
-                        progress.setStatus("Stopped");
+                        progress.SetStatus("Stopped");
                         break;
                     default:
-                        progress.setStatus("Unhandled Error: " + error_code);
+                        progress.SetStatus("Unhandled Error: " + error_code);
                         Ext.Msg.alert(acs_lang_text.error || "Error","Error Code: " + errorCode + ", File name: " + file.name + ", File size: " + file.size + ", Message: " + message);
                         break;
                     }
