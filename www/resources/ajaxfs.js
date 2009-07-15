@@ -572,7 +572,7 @@ ajaxfs.prototype = {
     // check permissions of the given tree node and enable/disable toolbars as needed
     
     resetToolbar : function(node) {
-        if(node.attributes.attributes["write_p"] == 't') {
+        if(node.attributes.attributes["write_p"]) {
             Ext.getCmp('btnNewFolder').show();
             Ext.getCmp('btnUploadFile').show();
             if(this.create_url_p) {
@@ -588,13 +588,13 @@ ajaxfs.prototype = {
             Ext.getCmp('mnRename').hide();
         }
               
-        if(node.attributes.attributes["delete_p"] == 't') {
+        if(node.attributes.attributes["delete_p"]) {
             Ext.getCmp('btnDelete').show();
         } else {
             Ext.getCmp('btnDelete').hide();
         }
 
-        if(node.attributes.attributes["admin_p"] == 't') {
+        if(node.attributes.attributes["admin_p"]) {
             Ext.getCmp('mnPerms').show();
             Ext.getCmp('mnProp').show();
         } else {
