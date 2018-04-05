@@ -1,6 +1,6 @@
 ad_page_contract {
 
-    Script to recieve a new revision of a file
+    Script to receive a new revision of a file
 
 } {
     file_id:integer

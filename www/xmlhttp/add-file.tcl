@@ -1,6 +1,6 @@
 ad_page_contract {
 
-    script to recieve the new file and insert it into the database
+    script to receive the new file and insert it into the database
 
 } {
     folder_id:integer,notnull
