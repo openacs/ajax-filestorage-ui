@@ -70,7 +70,7 @@ if { [info commands ::template::head::add_javascript] ne "" } {
 
 if { [exists_and_not_null package_id] } {
 
-    set options {}
+    set options [list]
 
     # get the root folder
     set rootfolder_id [fs_get_root_folder -package_id $package_id]
