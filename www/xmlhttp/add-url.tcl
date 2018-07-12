@@ -17,9 +17,9 @@ set result "{\"success\":true}"
 # ad_require_permission $folder_id write
 if { ![permission::permission_p -object_id $folder_id -privilege "write"] } {
 
-    # ns_return 500 "text/html" "You don't have permission to create a url on this folder."
+    # ns_return 500 "text/html" "You don't have permission to create a URL on this folder."
     # ad_script_abort
-    set result "{\"success\":false,\"error\":\"You don't have permission to create a url on this folder.\"}"
+    set result "{\"success\":false,\"error\":\"You don't have permission to create a URL on this folder.\"}"
 
 } else {
 
