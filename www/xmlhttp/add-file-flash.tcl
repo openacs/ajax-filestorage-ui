@@ -57,7 +57,7 @@ set unzip_binary [string trim [parameter::get -package_id $package_id -parameter
 
 if { $unpack_p && ![empty_string_p $unzip_binary] && [file extension $Filedata] eq ".zip"  } {
     
-    set path [ns_tmpnam]
+    set path [ns_mktemp]
     file mkdir $path
 
     
